@@ -1,12 +1,4 @@
-
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
-yt-dlp[default,curl-cffi]
-faster-whisper>=1.1.1
 python-multipart
-av==17.1.0
-
-
-
-
 
