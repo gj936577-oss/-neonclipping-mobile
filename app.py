@@ -5,10 +5,9 @@ import subprocess
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, HttpUrl
 
 app = FastAPI(title="NeonClipping API")
 
@@ -33,15 +32,8 @@ JOBS = {}
 LOCK = threading.Lock()
 BUSY = False
 
-
-class MakeRequest(BaseModel):
-    url: HttpUrl
-    count: int = 3
-    min_len: int = 20
-    max_len: int = 60
-    layout: str = "9:16"
-    mode: str = "auto"
-    captions: bool = True
+MAX_SIZE = 500 * 1024 * 1024
+ALLOWED = {".mp4", ".mov", ".mkv", ".webm"}
 
 
 def update(job, **kwargs):
@@ -49,16 +41,13 @@ def update(job, **kwargs):
 
 
 def cmd(args, timeout=None):
-    env = os.environ.copy()
-    deno_path = str(Path.home() / ".deno" / "bin")
-    env["PATH"] = deno_path + os.pathsep + env.get("PATH", "")
-
     result = subprocess.run(
         args,
         capture_output=True,
         text=True,
-        timeout=timeout,
-        env=env
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout
     )
 
     if result.returncode != 0:
@@ -69,45 +58,17 @@ def cmd(args, timeout=None):
     return result.stdout.strip()
 
 
-def process(job, data):
+def process(job, video_path, settings):
     global BUSY
 
     folder = WORK / job
-    folder.mkdir(parents=True, exist_ok=True)
+    folder.mkdir(exist_ok=True)
 
     try:
         update(
             job,
-            status="downloading",
-            progress=5,
-            message="Video download ho rahi hai..."
-        )
-
-        video_path = folder / "source.mp4"
-
-        cmd([
-            "yt-dlp",
-            "--js-runtimes", "deno",
-            "--remote-components", "ejs:npm",
-            "--verbose",
-            "--no-playlist",
-            "--match-filter", "duration <= 7200",
-            "-f", "best[height<=720][ext=mp4]/best[height<=720]/best",
-            "--merge-output-format", "mp4",
-            "-o", str(video_path),
-            str(data["url"])
-        ], timeout=900)
-
-        if not video_path.exists():
-            candidates = list(folder.glob("source.*"))
-            if not candidates:
-                raise RuntimeError("Downloaded video file nahi mili.")
-            video_path = candidates[0]
-
-        update(
-            job,
             status="transcribing",
-            progress=25,
+            progress=10,
             message="Audio samjhi ja rahi hai..."
         )
 
@@ -139,19 +100,18 @@ def process(job, data):
         update(
             job,
             status="selecting",
-            progress=45,
+            progress=40,
             message="Clip moments select ho rahe hain..."
         )
 
         duration = max(item["end"] for item in transcript)
 
-        min_len = max(10, int(data.get("min_len", 20)))
-        max_len = max(min_len, int(data.get("max_len", 60)))
-        count = max(1, min(10, int(data.get("count", 3))))
+        min_len = max(10, int(settings["min_len"]))
+        max_len = max(min_len, int(settings["max_len"]))
+        count = max(1, min(10, int(settings["count"])))
 
         windows = []
         step = max(5, min_len // 2)
-
         start = 0
 
         while start < duration:
@@ -163,7 +123,6 @@ def process(job, data):
                     for item in transcript
                     if item["start"] < end and item["end"] > start
                 )
-
                 windows.append((words, start, end))
 
             start += step
@@ -193,7 +152,7 @@ def process(job, data):
         update(
             job,
             status="rendering",
-            progress=60,
+            progress=55,
             message="Clips ban rahe hain..."
         )
 
@@ -208,7 +167,7 @@ def process(job, data):
                 "crop=720:1280"
             )
 
-            ffmpeg_args = [
+            cmd([
                 "ffmpeg",
                 "-y",
                 "-ss", str(start),
@@ -222,9 +181,7 @@ def process(job, data):
                 "-b:a", "128k",
                 "-movflags", "+faststart",
                 str(output_path)
-            ]
-
-            cmd(ffmpeg_args, timeout=600)
+            ], timeout=600)
 
             results.append({
                 "name": output_name,
@@ -235,7 +192,7 @@ def process(job, data):
 
             update(
                 job,
-                progress=60 + int(35 * index / len(selected)),
+                progress=55 + int(40 * index / len(selected)),
                 message=f"{index}/{len(selected)} clips ready..."
             )
 
@@ -276,37 +233,97 @@ def health():
 
 
 @app.post("/make")
-def make(data: MakeRequest):
+async def make(
+    video: UploadFile = File(...),
+    count: int = Form(3),
+    min_len: int = Form(20),
+    max_len: int = Form(60),
+    captions: bool = Form(True)
+):
     global BUSY
+
+    suffix = Path(video.filename or "").suffix.lower()
+
+    if suffix not in ALLOWED:
+        raise HTTPException(
+            status_code=400,
+            detail="MP4, MOV, MKV ya WEBM video upload karo."
+        )
 
     with LOCK:
         if BUSY:
             raise HTTPException(
                 status_code=429,
-                detail="Ek video pehle se process ho rahi hai. Thoda wait karo."
+                detail="Ek video pehle se process ho rahi hai."
             )
-
         BUSY = True
 
     job = uuid.uuid4().hex[:12]
+    folder = WORK / job
+    folder.mkdir(parents=True, exist_ok=True)
+    video_path = folder / f"source{suffix}"
 
-    JOBS[job] = {
-        "status": "queued",
-        "progress": 0,
-        "message": "Job start ho rahi hai...",
-        "clips": [],
-        "error": None
-    }
+    try:
+        size = 0
 
-    thread = threading.Thread(
-        target=process,
-        args=(job, data.model_dump()),
-        daemon=True
-    )
+        with open(video_path, "wb") as output:
+            while True:
+                chunk = await video.read(1024 * 1024)
 
-    thread.start()
+                if not chunk:
+                    break
 
-    return {"job_id": job}
+                size += len(chunk)
+
+                if size > MAX_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="Video 500 MB se chhoti honi chahiye."
+                    )
+
+                output.write(chunk)
+
+        if size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Video file khaali hai."
+            )
+
+        await video.close()
+
+        JOBS[job] = {
+            "status": "queued",
+            "progress": 0,
+            "message": "Job start ho rahi hai...",
+            "clips": [],
+            "error": None
+        }
+
+        settings = {
+            "count": count,
+            "min_len": min_len,
+            "max_len": max_len,
+            "captions": captions
+        }
+
+        thread = threading.Thread(
+            target=process,
+            args=(job, video_path, settings),
+            daemon=True
+        )
+        thread.start()
+
+        return {"job_id": job}
+
+    except Exception:
+        with LOCK:
+            BUSY = False
+
+        if folder.exists():
+            import shutil
+            shutil.rmtree(folder, ignore_errors=True)
+
+        raise
 
 
 @app.get("/make/{job_id}")
@@ -318,3 +335,4 @@ def get_job(job_id: str):
         )
 
     return JOBS[job_id]
+            
