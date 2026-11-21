@@ -5,11 +5,18 @@ import subprocess
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="NeonClipping API")
+BASE = Path(__file__).resolve().parent
+WORK = BASE / "work"
+OUTPUTS = BASE / "outputs"
+
+WORK.mkdir(exist_ok=True)
+OUTPUTS.mkdir(exist_ok=True)
+
+app = FastAPI(title="NeonClipping")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,28 +26,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE = Path(__file__).resolve().parent
-WORK = BASE / "work"
-OUTPUTS = BASE / "outputs"
-
-WORK.mkdir(exist_ok=True)
-OUTPUTS.mkdir(exist_ok=True)
-
 app.mount("/outputs", StaticFiles(directory=str(OUTPUTS)), name="outputs")
 
 JOBS = {}
 LOCK = threading.Lock()
 BUSY = False
 
-MAX_SIZE = 500 * 1024 * 1024
 ALLOWED = {".mp4", ".mov", ".mkv", ".webm"}
+MAX_SIZE = 500 * 1024 * 1024
 
 
-def update(job, **kwargs):
-    JOBS[job].update(kwargs)
-
-
-def cmd(args, timeout=None):
+def run_command(args, timeout=900):
     result = subprocess.run(
         args,
         capture_output=True,
@@ -51,180 +47,130 @@ def cmd(args, timeout=None):
     )
 
     if result.returncode != 0:
-        raise RuntimeError(
-            (result.stderr or result.stdout or "Command failed")[-4000:]
-        )
+        raise RuntimeError(result.stderr[-2500:] or "FFmpeg error")
 
     return result.stdout.strip()
 
 
-def process(job, video_path, settings):
+def get_duration(path):
+    result = run_command([
+        "ffprobe",
+        "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        str(path)
+    ], timeout=60)
+
+    return float(result)
+
+
+def process_job(job_id, source, count, min_len, max_len):
     global BUSY
 
-    folder = WORK / job
-    folder.mkdir(exist_ok=True)
-
     try:
-        update(
-            job,
-            status="transcribing",
-            progress=10,
-            message="Audio samjhi ja rahi hai..."
-        )
+        with LOCK:
+            JOBS[job_id]["status"] = "processing"
+            JOBS[job_id]["progress"] = 10
+            JOBS[job_id]["message"] = "Video check ho rahi hai..."
 
-        from faster_whisper import WhisperModel
+        duration = get_duration(source)
 
-        model = WhisperModel(
-            "tiny",
-            device="cpu",
-            compute_type="int8"
-        )
+        if duration <= 0:
+            raise RuntimeError("Video duration read nahi ho paayi.")
 
-        segments, info = model.transcribe(
-            str(video_path),
-            word_timestamps=False
-        )
+        # Short video: make one complete clip.
+        if duration <= min_len or duration <= max_len:
+            clip_count = 1
+            clip_length = duration
+            starts = [0]
+        else:
+            clip_count = min(count, max(1, int(duration / min_len)))
+            clip_length = min(max_len, max(min_len, duration / clip_count))
+            clip_count = min(clip_count, count)
 
-        transcript = []
+            if clip_count == 1:
+                starts = [max(0, (duration - clip_length) / 2)]
+            else:
+                last_start = max(0, duration - clip_length)
+                starts = [
+                    last_start * i / (clip_count - 1)
+                    for i in range(clip_count)
+                ]
 
-        for segment in segments:
-            transcript.append({
-                "start": float(segment.start),
-                "end": float(segment.end),
-                "text": segment.text.strip()
-            })
+        job_output = OUTPUTS / job_id
+        job_output.mkdir(parents=True, exist_ok=True)
 
-        if not transcript:
-            raise RuntimeError("Video se speech detect nahi hui.")
+        clips = []
 
-        update(
-            job,
-            status="selecting",
-            progress=40,
-            message="Clip moments select ho rahe hain..."
-        )
+        for index, start in enumerate(starts, start=1):
+            filename = f"clip_{index}.mp4"
+            destination = job_output / filename
 
-        duration = max(item["end"] for item in transcript)
-
-        min_len = max(10, int(settings["min_len"]))
-        max_len = max(min_len, int(settings["max_len"]))
-        count = max(1, min(10, int(settings["count"])))
-
-        windows = []
-        step = max(5, min_len // 2)
-        start = 0
-
-        while start < duration:
-            end = min(duration, start + max_len)
-
-            if end - start >= min_len:
-                words = sum(
-                    len(item["text"].split())
-                    for item in transcript
-                    if item["start"] < end and item["end"] > start
+            with LOCK:
+                JOBS[job_id]["progress"] = 10 + int(
+                    80 * (index - 1) / len(starts)
                 )
-                windows.append((words, start, end))
+                JOBS[job_id]["message"] = (
+                    f"Clip {index}/{len(starts)} ban rahi hai..."
+                )
 
-            start += step
-
-        windows.sort(reverse=True)
-
-        selected = []
-
-        for words, start, end in windows:
-            if words == 0:
-                continue
-
-            overlaps = any(
-                not (end <= old_start or start >= old_end)
-                for old_start, old_end in selected
-            )
-
-            if not overlaps:
-                selected.append((start, end))
-
-            if len(selected) >= count:
-                break
-
-        if not selected:
-            selected = [(0, min(duration, max_len))]
-
-        update(
-            job,
-            status="rendering",
-            progress=55,
-            message="Clips ban rahe hain..."
-        )
-
-        results = []
-
-        for index, (start, end) in enumerate(selected, 1):
-            output_name = f"{job}_{index}.mp4"
-            output_path = OUTPUTS / output_name
-
-            video_filter = (
-                "scale=720:1280:force_original_aspect_ratio=increase,"
-                "crop=720:1280"
-            )
-
-            cmd([
+            run_command([
                 "ffmpeg",
                 "-y",
                 "-ss", str(start),
-                "-i", str(video_path),
-                "-t", str(end - start),
-                "-vf", video_filter,
+                "-i", str(source),
+                "-t", str(min(clip_length, duration - start)),
+                "-map", "0:v:0",
+                "-map", "0:a?",
+                "-vf",
+                "scale=720:1280:force_original_aspect_ratio=increase,"
+                "crop=720:1280",
                 "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-crf", "26",
+                "-preset", "veryfast",
+                "-crf", "23",
                 "-c:a", "aac",
                 "-b:a", "128k",
                 "-movflags", "+faststart",
-                str(output_path)
-            ], timeout=600)
+                str(destination)
+            ], timeout=900)
 
-            results.append({
-                "name": output_name,
-                "url": f"/outputs/{output_name}",
-                "start": round(start, 2),
-                "end": round(end, 2)
+            clips.append({
+                "name": f"Clip {index}",
+                "url": f"/outputs/{job_id}/{filename}"
             })
 
-            update(
-                job,
-                progress=55 + int(40 * index / len(selected)),
-                message=f"{index}/{len(selected)} clips ready..."
-            )
+        with LOCK:
+            JOBS[job_id] = {
+                "status": "completed",
+                "progress": 100,
+                "message": "Clips ready hain!",
+                "clips": clips,
+                "error": None
+            }
 
-        update(
-            job,
-            status="done",
-            progress=100,
-            message="Clips ready!",
-            clips=results
-        )
-
-    except Exception as exc:
-        update(
-            job,
-            status="error",
-            progress=0,
-            message="Processing failed",
-            error=str(exc)[-3000:]
-        )
+    except Exception as error:
+        with LOCK:
+            JOBS[job_id] = {
+                "status": "error",
+                "progress": 0,
+                "message": "Clip banane mein error aayi.",
+                "clips": [],
+                "error": str(error)
+            }
 
     finally:
+        try:
+            source.unlink(missing_ok=True)
+        except Exception:
+            pass
+
         with LOCK:
             BUSY = False
 
 
 @app.get("/")
 def home():
-    return {
-        "name": "NeonClipping API",
-        "status": "online",
-        "docs": "/docs"
-    }
+    return {"message": "NeonClipping API is running"}
 
 
 @app.get("/health")
@@ -234,6 +180,7 @@ def health():
 
 @app.post("/make")
 async def make(
+    background_tasks: BackgroundTasks,
     video: UploadFile = File(...),
     count: int = Form(3),
     min_len: int = Form(20),
@@ -245,28 +192,30 @@ async def make(
     suffix = Path(video.filename or "").suffix.lower()
 
     if suffix not in ALLOWED:
-        raise HTTPException(
-            status_code=400,
-            detail="MP4, MOV, MKV ya WEBM video upload karo."
-        )
+        raise HTTPException(400, "MP4, MOV, MKV ya WEBM video upload karo.")
+
+    if min_len < 1 or max_len < min_len:
+        raise HTTPException(400, "Clip duration settings galat hain.")
+
+    count = max(1, min(count, 10))
 
     with LOCK:
         if BUSY:
             raise HTTPException(
-                status_code=429,
-                detail="Ek video pehle se process ho rahi hai."
+                429,
+                "Ek video pehle se process ho rahi hai. Thoda wait karo."
             )
         BUSY = True
 
-    job = uuid.uuid4().hex[:12]
-    folder = WORK / job
-    folder.mkdir(parents=True, exist_ok=True)
-    video_path = folder / f"source{suffix}"
+    job_id = uuid.uuid4().hex[:12]
+    job_folder = WORK / job_id
+    job_folder.mkdir(parents=True, exist_ok=True)
+    source = job_folder / f"source{suffix}"
 
     try:
         size = 0
 
-        with open(video_path, "wb") as output:
+        with open(source, "wb") as output_file:
             while True:
                 chunk = await video.read(1024 * 1024)
 
@@ -276,63 +225,47 @@ async def make(
                 size += len(chunk)
 
                 if size > MAX_SIZE:
-                    raise HTTPException(
-                        status_code=413,
-                        detail="Video 500 MB se chhoti honi chahiye."
-                    )
+                    raise HTTPException(413, "Maximum upload size 500 MB hai.")
 
-                output.write(chunk)
+                output_file.write(chunk)
 
-        if size == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Video file khaali hai."
-            )
+    except Exception:
+        source.unlink(missing_ok=True)
+        with LOCK:
+            BUSY = False
+        raise
 
+    finally:
         await video.close()
 
-        JOBS[job] = {
+    with LOCK:
+        JOBS[job_id] = {
             "status": "queued",
             "progress": 0,
-            "message": "Job start ho rahi hai...",
+            "message": "Video upload ho gayi. Processing shuru ho rahi hai...",
             "clips": [],
             "error": None
         }
 
-        settings = {
-            "count": count,
-            "min_len": min_len,
-            "max_len": max_len,
-            "captions": captions
-        }
+    background_tasks.add_task(
+        process_job,
+        job_id,
+        source,
+        count,
+        min_len,
+        max_len
+    )
 
-        thread = threading.Thread(
-            target=process,
-            args=(job, video_path, settings),
-            daemon=True
-        )
-        thread.start()
-
-        return {"job_id": job}
-
-    except Exception:
-        with LOCK:
-            BUSY = False
-
-        if folder.exists():
-            import shutil
-            shutil.rmtree(folder, ignore_errors=True)
-
-        raise
+    return {"job_id": job_id, "status": "queued"}
 
 
 @app.get("/make/{job_id}")
 def get_job(job_id: str):
-    if job_id not in JOBS:
-        raise HTTPException(
-            status_code=404,
-            detail="Job nahi mili."
-        )
+    with LOCK:
+        job = JOBS.get(job_id)
 
-    return JOBS[job_id]
-            
+        if not job:
+            raise HTTPException(404, "Job nahi mili.")
+
+        return job
+        
