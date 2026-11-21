@@ -5,7 +5,8 @@ import subprocess
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -78,14 +79,16 @@ def process_job(job_id, source, count, min_len, max_len):
         if duration <= 0:
             raise RuntimeError("Video duration read nahi ho paayi.")
 
-        # Short video: make one complete clip.
         if duration <= min_len or duration <= max_len:
             clip_count = 1
             clip_length = duration
             starts = [0]
         else:
             clip_count = min(count, max(1, int(duration / min_len)))
-            clip_length = min(max_len, max(min_len, duration / clip_count))
+            clip_length = min(
+                max_len,
+                max(min_len, duration / clip_count)
+            )
             clip_count = min(clip_count, count)
 
             if clip_count == 1:
@@ -180,24 +183,33 @@ def health():
 
 @app.post("/make")
 async def make(
+    request: Request,
     background_tasks: BackgroundTasks,
-    video: UploadFile = File(...),
-    count: int = Form(3),
-    min_len: int = Form(20),
-    max_len: int = Form(60),
-    captions: bool = Form(True)
+    filename: str = Query(...),
+    count: int = Query(3),
+    min_len: int = Query(20),
+    max_len: int = Query(60)
 ):
     global BUSY
 
-    suffix = Path(video.filename or "").suffix.lower()
+    suffix = Path(filename).suffix.lower()
 
     if suffix not in ALLOWED:
-        raise HTTPException(400, "MP4, MOV, MKV ya WEBM video upload karo.")
+        raise HTTPException(
+            400,
+            "MP4, MOV, MKV ya WEBM video upload karo."
+        )
 
     if min_len < 1 or max_len < min_len:
         raise HTTPException(400, "Clip duration settings galat hain.")
 
     count = max(1, min(count, 10))
+
+    content_length = request.headers.get("content-length")
+
+    if content_length:
+        if int(content_length) > MAX_SIZE:
+            raise HTTPException(413, "Maximum upload size 500 MB hai.")
 
     with LOCK:
         if BUSY:
@@ -216,27 +228,35 @@ async def make(
         size = 0
 
         with open(source, "wb") as output_file:
-            while True:
-                chunk = await video.read(1024 * 1024)
-
+            async for chunk in request.stream():
                 if not chunk:
-                    break
+                    continue
 
                 size += len(chunk)
 
                 if size > MAX_SIZE:
-                    raise HTTPException(413, "Maximum upload size 500 MB hai.")
+                    raise HTTPException(
+                        413,
+                        "Maximum upload size 500 MB hai."
+                    )
 
                 output_file.write(chunk)
 
+        if size == 0:
+            raise HTTPException(400, "Empty video upload hui hai.")
+
     except Exception:
         source.unlink(missing_ok=True)
+
+        try:
+            job_folder.rmdir()
+        except OSError:
+            pass
+
         with LOCK:
             BUSY = False
-        raise
 
-    finally:
-        await video.close()
+        raise
 
     with LOCK:
         JOBS[job_id] = {
