@@ -72,7 +72,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
  width:0%;height:100%;border-radius:30px;
  background:linear-gradient(90deg,#874aff,#d7a5ff,#9d65ff);
  box-shadow:0 0 15px #a66bff;
- transition:width .25s ease;position:relative;overflow:hidden;
+ transition:width .15s ease;position:relative;overflow:hidden;
 }
 #bar.active:after{
  content:"";position:absolute;top:0;left:-45%;
@@ -84,6 +84,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
  font-size:29px;font-weight:bold;color:#d8baff;
  margin-top:13px;font-variant-numeric:tabular-nums;
 }
+#speed{font-size:12px;color:#aaa1ba;margin-top:5px}
 #results{margin-top:20px}
 .clip{
  background:rgba(255,255,255,.065);
@@ -151,6 +152,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
  <div id="status">Your clips are waiting to be created.</div>
  <div class="progress"><div id="bar"></div></div>
  <div id="percentage">0%</div>
+ <div id="speed">Ready</div>
  <div id="results"></div>
 </div>
 
@@ -159,7 +161,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <script>
 const API="https://neonclipping-mobile.onrender.com";
+const CHUNK_WORKERS=3;
 let busy=false;
+
 const videoInput=document.getElementById("video");
 
 videoInput.addEventListener("change",()=>{
@@ -172,59 +176,166 @@ videoInput.addEventListener("change",()=>{
 function showStatus(message,progress,active=true){
  const bar=document.getElementById("bar");
  document.getElementById("status").textContent=message;
-
  const value=Math.max(0,Math.min(100,Number(progress)||0));
  bar.style.width=value+"%";
  bar.classList.toggle("active",active);
  document.getElementById("percentage").textContent=Math.round(value)+"%";
 }
 
-function uploadVideo(file,count,minLen,maxLen){
+function formatSpeed(bytesPerSecond){
+ if(bytesPerSecond>=1024*1024){
+  return (bytesPerSecond/1024/1024).toFixed(2)+" MB/s";
+ }
+ return (bytesPerSecond/1024).toFixed(1)+" KB/s";
+}
+
+function xhrChunk(url,blob,onProgress){
  return new Promise((resolve,reject)=>{
   const xhr=new XMLHttpRequest();
-
-  const params=new URLSearchParams({
-   filename:file.name,
-   count:String(count),
-   min_len:String(minLen),
-   max_len:String(maxLen)
-  });
-
-  xhr.open("POST",API+"/make?"+params.toString());
-  xhr.timeout=0;
+  xhr.open("PUT",url);
   xhr.setRequestHeader("Content-Type","application/octet-stream");
+  xhr.timeout=0;
 
-  xhr.upload.onprogress=(event)=>{
-   const total=(event.lengthComputable && event.total>0)
-    ? event.total
-    : file.size;
-
-   if(total>0){
-    const percent=Math.min(99,(event.loaded/total)*100);
-    showStatus("Uploading your video...",percent,true);
-   }
+  xhr.upload.onprogress=e=>{
+   if(e.lengthComputable)onProgress(e.loaded);
   };
 
   xhr.onload=()=>{
-   let result;
-   try{result=JSON.parse(xhr.responseText)}
-   catch(e){reject(new Error("Invalid server response"));return}
-
-   if(xhr.status<200||xhr.status>=300){
-    reject(new Error(result.detail||"Upload failed"));
-    return;
+   if(xhr.status>=200&&xhr.status<300){
+    resolve();
+   }else{
+    let message="Chunk upload failed";
+    try{
+     const data=JSON.parse(xhr.responseText);
+     message=data.detail||message;
+    }catch(e){}
+    reject(new Error(message));
    }
-
-   showStatus("Upload complete!",100,false);
-   resolve(result);
   };
 
   xhr.onerror=()=>reject(new Error("Network connection failed"));
-  xhr.ontimeout=()=>reject(new Error("Upload timed out"));
   xhr.onabort=()=>reject(new Error("Upload cancelled"));
-
-  xhr.send(file);
+  xhr.send(blob);
  });
+}
+
+async function uploadChunk(uploadId,index,blob,onProgress){
+ let lastError;
+
+ for(let attempt=1;attempt<=3;attempt++){
+  try{
+   await xhrChunk(
+    API+"/fast/"+uploadId+"/chunks/"+index,
+    blob,
+    onProgress
+   );
+   onProgress(blob.size);
+   return;
+  }catch(error){
+   lastError=error;
+   onProgress(0);
+   if(attempt<3){
+    await new Promise(r=>setTimeout(r,1000*attempt));
+   }
+  }
+ }
+
+ throw lastError;
+}
+
+async function startUpload(file){
+ const response=await fetch(API+"/fast/start",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   filename:file.name,
+   size:file.size
+  })
+ });
+
+ const data=await response.json();
+
+ if(!response.ok){
+  throw new Error(data.detail||"Upload start failed");
+ }
+
+ if(!data.upload_id||!data.chunk_size||!data.total_chunks){
+  throw new Error("Invalid upload session response");
+ }
+
+ return data;
+}
+
+async function uploadVideo(file,session){
+ const uploadId=session.upload_id;
+ const chunkSize=session.chunk_size;
+ const totalChunks=session.total_chunks;
+
+ const loaded=new Array(totalChunks).fill(0);
+ let uploadedBytes=0;
+ let nextIndex=0;
+ let failed=null;
+
+ const startedAt=performance.now();
+
+ function updateProgress(){
+  const elapsed=Math.max((performance.now()-startedAt)/1000,0.1);
+  const speed=uploadedBytes/elapsed;
+  const percent=(uploadedBytes/file.size)*100;
+
+  showStatus(
+   "Uploading video • "+(uploadedBytes/1024/1024).toFixed(1)+
+   " / "+(file.size/1024/1024).toFixed(1)+" MB",
+   percent,
+   true
+  );
+
+  document.getElementById("speed").textContent=
+   "Upload speed: "+formatSpeed(speed);
+ }
+
+ async function worker(){
+  while(true){
+   if(failed) return;
+
+   const index=nextIndex++;
+   if(index>=totalChunks)return;
+
+   const start=index*chunkSize;
+   const end=Math.min(start+chunkSize,file.size);
+   const blob=file.slice(start,end);
+
+   try{
+    await uploadChunk(
+     uploadId,
+     index,
+     blob,
+     loadedNow=>{
+      const next=Math.min(loadedNow,blob.size);
+      uploadedBytes+=next-loaded[index];
+      loaded[index]=next;
+      updateProgress();
+     }
+    );
+   }catch(error){
+    failed=error;
+    return;
+   }
+  }
+ }
+
+ const workers=[];
+ for(let i=0;i<Math.min(CHUNK_WORKERS,totalChunks);i++){
+  workers.push(worker());
+ }
+
+ await Promise.all(workers);
+
+ if(failed)throw failed;
+
+ showStatus("All chunks uploaded. Preparing video...",99,false);
+ document.getElementById("speed").textContent="Combining video chunks...";
+ return uploadId;
 }
 
 async function generateClips(){
@@ -237,30 +348,61 @@ async function generateClips(){
 
  const minLen=Number(document.getElementById("min").value);
  const maxLen=Number(document.getElementById("max").value);
+ const count=Number(document.getElementById("count").value);
 
- if(minLen>maxLen){alert("Minimum length cannot exceed maximum.");return}
+ if(minLen>maxLen){
+  alert("Minimum length cannot exceed maximum.");
+  return;
+ }
 
  busy=true;
  const btn=document.getElementById("generate");
  btn.disabled=true;
  document.getElementById("results").innerHTML="";
-
- showStatus("Preparing your video...",0,true);
+ document.getElementById("speed").textContent="Starting...";
 
  try{
-  const result=await uploadVideo(
-   file,
-   Number(document.getElementById("count").value),
-   minLen,
-   maxLen
+  showStatus("Creating upload session...",0,true);
+
+  const session=await startUpload(file);
+
+  showStatus("Starting fast upload...",0,true);
+
+  const uploadId=await uploadVideo(file,session);
+
+  showStatus("Upload complete. Starting clip generation...",100,false);
+  document.getElementById("speed").textContent="Processing on server...";
+
+  const params=new URLSearchParams({
+   count:String(count),
+   min_len:String(minLen),
+   max_len:String(maxLen)
+  });
+
+  const response=await fetch(
+   API+"/fast/"+uploadId+"/generate?"+params.toString(),
+   {method:"POST"}
   );
 
-  if(!result.job_id)throw new Error("Server response mein job ID nahi mila.");
+  const result=await response.json();
+
+  if(!response.ok){
+   throw new Error(
+    typeof result.detail==="string"
+    ? result.detail
+    : "Clip generation start failed"
+   );
+  }
+
+  if(!result.job_id){
+   throw new Error("Server response mein job ID nahi mila.");
+  }
 
   await checkJob(result.job_id);
 
  }catch(error){
   showStatus("Error: "+error.message,0,false);
+  document.getElementById("speed").textContent="Please try again.";
  }finally{
   busy=false;
   btn.disabled=false;
@@ -271,6 +413,7 @@ async function checkJob(id){
  try{
   while(true){
    const response=await fetch(API+"/make/"+id);
+
    if(!response.ok)throw new Error("Job status check failed");
 
    const job=await response.json();
@@ -278,6 +421,7 @@ async function checkJob(id){
    if(job.status==="completed"){
     displayClips(job.clips||[]);
     showStatus("Your clips are ready!",100,false);
+    document.getElementById("speed").textContent="Completed";
     break;
    }
 
@@ -291,10 +435,12 @@ async function checkJob(id){
     true
    );
 
+   document.getElementById("speed").textContent="Clip generation in progress";
+
    await new Promise(resolve=>setTimeout(resolve,3000));
   }
  }catch(error){
-  showStatus("Error: "+error.message,0,false);
+  throw error;
  }
 }
 
