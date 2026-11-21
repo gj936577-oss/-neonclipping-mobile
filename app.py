@@ -1,9 +1,6 @@
 
 import os
-import re
 import uuid
-import time
-import shutil
 import subprocess
 import threading
 from pathlib import Path
@@ -92,8 +89,8 @@ def process(job, data):
             "yt-dlp",
             "--js-runtimes", "deno",
             "--remote-components", "ejs:npm",
+            "--verbose",
             "--no-playlist",
-            "--no-warnings",
             "--match-filter", "duration <= 7200",
             "-f", "best[height<=720][ext=mp4]/best[height<=720]/best",
             "--merge-output-format", "mp4",
@@ -128,6 +125,7 @@ def process(job, data):
         )
 
         transcript = []
+
         for segment in segments:
             transcript.append({
                 "start": float(segment.start),
@@ -146,30 +144,34 @@ def process(job, data):
         )
 
         duration = max(item["end"] for item in transcript)
+
         min_len = max(10, int(data.get("min_len", 20)))
         max_len = max(min_len, int(data.get("max_len", 60)))
         count = max(1, min(10, int(data.get("count", 3))))
 
-        # Speech-density based moment selection.
-        # This is a basic automatic selector, not a trained viral-moment AI.
         windows = []
         step = max(5, min_len // 2)
 
         start = 0
+
         while start < duration:
             end = min(duration, start + max_len)
+
             if end - start >= min_len:
                 words = sum(
                     len(item["text"].split())
                     for item in transcript
                     if item["start"] < end and item["end"] > start
                 )
+
                 windows.append((words, start, end))
+
             start += step
 
         windows.sort(reverse=True)
 
         selected = []
+
         for words, start, end in windows:
             if words == 0:
                 continue
@@ -283,6 +285,7 @@ def make(data: MakeRequest):
                 status_code=429,
                 detail="Ek video pehle se process ho rahi hai. Thoda wait karo."
             )
+
         BUSY = True
 
     job = uuid.uuid4().hex[:12]
@@ -300,6 +303,7 @@ def make(data: MakeRequest):
         args=(job, data.model_dump()),
         daemon=True
     )
+
     thread.start()
 
     return {"job_id": job}
@@ -308,7 +312,9 @@ def make(data: MakeRequest):
 @app.get("/make/{job_id}")
 def get_job(job_id: str):
     if job_id not in JOBS:
-        raise HTTPException(status_code=404, detail="Job nahi mili.")
+        raise HTTPException(
+            status_code=404,
+            detail="Job nahi mili."
+        )
 
     return JOBS[job_id]
-        
