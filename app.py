@@ -10,6 +10,8 @@ from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from fast_engine import router as fast_router
+
 BASE = Path(__file__).resolve().parent
 WORK = BASE / "work"
 OUTPUTS = BASE / "outputs"
@@ -18,6 +20,8 @@ WORK.mkdir(exist_ok=True)
 OUTPUTS.mkdir(exist_ok=True)
 
 app = FastAPI(title="NeonClipping")
+
+app.include_router(fast_router)
 
 app.add_middleware(
     CORSMiddleware,
