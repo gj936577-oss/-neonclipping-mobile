@@ -1,88 +1,225 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#10091f"><title>NeonClipping Mobile</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeonClipping AI</title>
 <style>
-:root{--bg:#0c0718;--panel:#171027;--panel2:#211536;--pink:#ff3f9b;--cyan:#42e8ee;--text:#f8f4ff;--muted:#b9aecb;--line:#38294d}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#3b1250 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{width:min(760px,100%);margin:auto;padding:20px 16px 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 24px}.brand{font-weight:900;letter-spacing:.08em;font-size:18px}.brand span{color:var(--pink)}.pill{font-size:12px;color:var(--cyan);border:1px solid #25656b;border-radius:99px;padding:5px 10px}
-.hero{padding:24px 20px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,#24113d,#151027 70%);overflow:hidden}.eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.2em}.hero h1{font-size:clamp(30px,8vw,48px);line-height:1.04;margin:12px 0}.hero h1 span{color:var(--pink)}.hero p{color:var(--muted);margin:0;max-width:520px}
-.card{margin-top:16px;padding:19px;border:1px solid var(--line);border-radius:18px;background:rgba(23,16,39,.94)}h2{font-size:17px;margin:0 0 14px}.field{display:block;margin:13px 0 6px;color:#d7cce6;font-size:13px;font-weight:700}input,select{width:100%;border:1px solid #49365e;background:#0f0a1c;color:white;border-radius:12px;padding:14px;font:inherit;outline:none}input:focus,select:focus{border-color:var(--pink)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.btn{border:0;border-radius:12px;padding:14px 18px;font:800 15px system-ui;cursor:pointer}.primary{width:100%;margin-top:16px;color:#180a1d;background:linear-gradient(90deg,#ff3f9b,#ff9c47)}.secondary{background:#2b1d40;color:white;border:1px solid #59416f}.hint{font-size:12px;color:var(--muted);margin:9px 0 0}.status{padding:12px;border-radius:12px;background:#100b1e;color:var(--muted);margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere}.status.ok{border:1px solid #246b64;color:#9af4dc}.status.err{border:1px solid #8a3659;color:#ffb5d2}.clip{padding:13px;margin-top:10px;border:1px solid var(--line);border-radius:13px}.clip a{color:var(--cyan)}.footer{text-align:center;color:#8e819f;font-size:12px;padding:24px 8px}.small{font-size:12px;color:var(--muted)}@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.wrap{padding:14px 12px 36px}.hero{padding:21px 17px}.card{padding:16px}}
-</style></head>
-<body><main class="wrap">
-<header class="top"><div class="brand">NEON<span>CLIPPING</span></div><div class="pill">MOBILE EDITION</div></header>
-<section class="hero"><div class="eyebrow">LONG VIDEO. BIG MOMENTS.</div><h1>Make clips.<br><span>On your phone.</span></h1><p>YouTube video ko vertical Shorts/Reels clips mein badalne ke liye simple mobile interface.</p></section>
-<section class="card">
-<h2>01 · Bring your video</h2>
-<label class="field" for="videoUrl">YouTube / Twitch / Kick link</label>
-<input id="videoUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="url">
-<p class="hint">Is starter version mein link-based processing supported hai. MP4 upload ko backend ke upload endpoint se connect karna hoga.</p>
-</section>
-<section class="card">
-<h2>02 · Make your format</h2>
-<div class="grid">
-<div><label class="field" for="mode">Mode</label><select id="mode"><option value="fast">Fast</option><option value="deep">Deep</option></select></div>
-<div><label class="field" for="count">Clips</label><select id="count"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option><option>12</option></select></div>
-<div><label class="field" for="minLen">Min length (sec)</label><input id="minLen" type="number" value="30" min="10" max="300"></div>
-<div><label class="field" for="maxLen">Max length (sec)</label><input id="maxLen" type="number" value="60" min="10" max="300"></div>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080b14;color:#f5f7ff;
+ font-family:Arial,sans-serif;padding:20px;
+}
+.container{max-width:600px;margin:auto}
+.logo{font-size:28px;font-weight:800;color:#a78bfa}
+.sub{color:#9ca3af;margin-top:6px}
+.card{
+ background:#121827;border:1px solid #293249;
+ border-radius:18px;padding:20px;margin-top:22px;
+}
+h2{font-size:19px;margin-top:0}
+label{display:block;margin:16px 0 8px;color:#cbd5e1}
+input,select{
+ width:100%;padding:14px;border-radius:10px;
+ border:1px solid #374151;background:#0b1120;
+ color:white;font-size:15px;
+}
+input[type=file]{padding:12px}
+button{
+ width:100%;padding:15px;border:0;border-radius:12px;
+ background:#8b5cf6;color:white;font-weight:bold;
+ font-size:16px;margin-top:20px;
+}
+button:disabled{opacity:.5}
+.progress{
+ height:9px;background:#293249;border-radius:20px;
+ overflow:hidden;margin-top:16px;
+}
+.bar{height:100%;width:0%;background:#a78bfa}
+.status{color:#c4b5fd;margin-top:14px}
+.clip{
+ padding:14px;background:#0b1120;
+ border:1px solid #293249;border-radius:12px;
+ margin-top:12px;
+}
+a{color:#a78bfa;font-weight:bold}
+.small{font-size:12px;color:#9ca3af}
+</style>
+</head>
+
+<body>
+<div class="container">
+ <div class="logo">NEONCLIPPING</div>
+ <div class="sub">AI Video Clipper · Turn videos into short clips</div>
+
+ <div class="card">
+  <h2>Upload your video</h2>
+
+  <label>Select video from gallery</label>
+  <input id="video" type="file" accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+
+  <p class="small" id="fileInfo">MP4, MOV, MKV or WEBM · Maximum 500 MB</p>
+
+  <label>Number of clips</label>
+  <select id="count">
+   <option value="1">1 Clip</option>
+   <option value="2">2 Clips</option>
+   <option value="3" selected>3 Clips</option>
+   <option value="5">5 Clips</option>
+   <option value="10">10 Clips</option>
+  </select>
+
+  <label>Minimum clip duration</label>
+  <select id="min">
+   <option value="15">15 seconds</option>
+   <option value="20" selected>20 seconds</option>
+   <option value="30">30 seconds</option>
+  </select>
+
+  <label>Maximum clip duration</label>
+  <select id="max">
+   <option value="30">30 seconds</option>
+   <option value="45">45 seconds</option>
+   <option value="60" selected>60 seconds</option>
+   <option value="90">90 seconds</option>
+  </select>
+
+  <label>
+   <input id="captions" type="checkbox" checked style="width:auto">
+   Add automatic captions
+  </label>
+
+  <button id="generate" onclick="generateClips()">Generate Clips</button>
+ </div>
+
+ <div class="card">
+  <h2>Processing</h2>
+  <div id="status" class="status">Waiting for video...</div>
+  <div class="progress"><div id="bar" class="bar"></div></div>
+  <div id="results"></div>
+ </div>
 </div>
-<label class="field" for="layout">Layout</label><select id="layout"><option value="blur">Blurred fill</option><option value="face_game">Face + gameplay</option><option value="full">Full screen</option><option value="gameplay">Gameplay only</option></select>
-<label class="field" for="captions">Caption accuracy</label><select id="captions"><option value="fast">Fast</option><option value="accurate" selected>Accurate</option><option value="best_hindi">Best Hindi (large download)</option></select>
-<button class="btn primary" id="makeBtn">⚡ Make clips</button>
-<div id="status" class="status" role="status">Server abhi connect nahi hua. Backend URL set karke try karo.</div>
-</section>
-<section class="card"><h2>03 · Your clips</h2><div id="clips" class="small">Clips ready hone par yahan dikhengi.</div></section>
-<section class="card"><h2>Server connection</h2><label class="field" for="apiBase">NeonClipping server URL</label><input id="apiBase" type="url" placeholder="https://your-server.example.com"><p class="hint">Live server ka URL yahan daalo. Local PC ka 127.0.0.1 link phone par kaam nahi karega jab tak phone aur PC same network par na hon aur server ko safe tareeke se expose na kiya gaya ho.</p><button class="btn secondary" id="saveBtn">Save server URL</button><p class="small" id="savedMsg"></p></section>
-<footer class="footer">Mobile-friendly interface · NeonClipping engine alag server par run hota hai.</footer>
-</main>
+
 <script>
-const $=id=>document.getElementById(id);
-let apiBase=localStorage.getItem('neonApiBase')||'';
-$('apiBase').value=apiBase;
-$('saveBtn').onclick=()=>{apiBase=$('apiBase').value.trim().replace(/\/+$/,'');localStorage.setItem('neonApiBase',apiBase);$('savedMsg').textContent='Server URL is device par save ho gaya.'};
-function setStatus(msg,kind=''){ $('status').className='status '+kind; $('status').textContent=msg; }
-function collectLinks(obj,out=[]){
- if(!obj||typeof obj!=='object')return out;
- for(const [k,v] of Object.entries(obj)){
-  if(typeof v==='string' && (/\.mp4(\?|$)/i.test(v)||/download|video|file|url/i.test(k)&&/^https?:\/\//i.test(v))) out.push({label:k,url:v});
-  else if(v&&typeof v==='object')collectLinks(v,out);
+const API="https://neonclipping-mobile.onrender.com";
+
+const video=document.getElementById("video");
+const button=document.getElementById("generate");
+
+video.addEventListener("change",()=>{
+ const f=video.files[0];
+ document.getElementById("fileInfo").textContent =
+ f ? f.name+" · "+(f.size/1024/1024).toFixed(1)+" MB"
+ : "MP4, MOV, MKV or WEBM · Maximum 500 MB";
+});
+
+function showStatus(message,progress){
+ document.getElementById("status").textContent=message;
+ document.getElementById("bar").style.width=progress+"%";
+}
+
+async function generateClips(){
+ const file=video.files[0];
+
+ if(!file){
+  alert("Please select a video first.");
+  return;
  }
- return out;
-}
-async function request(path,opts={}){
- const res=await fetch(apiBase+path,opts);const raw=await res.text();let data;try{data=JSON.parse(raw)}catch{data={raw}};
- if(!res.ok)throw new Error(data.detail||data.error||`Server error ${res.status}: ${raw.slice(0,180)}`);
- return data;
-}
-$('makeBtn').onclick=async()=>{
- if(!apiBase){setStatus('Pehle Server connection mein apne deployed NeonClipping server ka URL save karo.','err');return;}
- const url=$('videoUrl').value.trim(),min=+$('minLen').value,max=+$('maxLen').value;
- if(!/^https?:\/\//i.test(url)){setStatus('Valid video link paste karo.','err');return;}
- if(min<10||max<min){setStatus('Clip length sahi set karo. Max length, min se badi honi chahiye.','err');return;}
- $('makeBtn').disabled=true;$('makeBtn').textContent='Processing…';$('clips').textContent='Abhi clips nahi aayi hain.';
+
+ if(file.size>500*1024*1024){
+  alert("Maximum video size is 500 MB.");
+  return;
+ }
+
+ const min=Number(document.getElementById("min").value);
+ const max=Number(document.getElementById("max").value);
+
+ if(min>max){
+  alert("Maximum duration must be greater than minimum duration.");
+  return;
+ }
+
+ button.disabled=true;
+ document.getElementById("results").innerHTML="";
+ showStatus("Uploading video...",5);
+
  try{
-  setStatus('Job start ho raha hai…');
-  const started=await request('/make',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,count:+$('count').value,min_len:min,max_len:max,layout:$('layout').value,mode:$('mode').value})});
-  const job=started.job;if(!job)throw new Error('Server response mein job ID nahi mila.');
-  setStatus('Job ID: '+job+'\nVideo process ho rahi hai. Is page ko khula rakho.');
-  let done=false;
-  for(let i=0;i<240;i++){
-   await new Promise(r=>setTimeout(r,3000));
-   const state=await request('/make/'+encodeURIComponent(job));
-   const status=(state.status||'').toLowerCase();
-   if(status==='done'||status==='completed'){
-    done=true;const links=collectLinks(state);
-    $('clips').innerHTML='';
-    if(links.length){for(const item of links){const div=document.createElement('div');div.className='clip';const a=document.createElement('a');a.href=item.url;a.textContent='Download / Open '+item.label;a.target='_blank';a.rel='noopener';div.appendChild(a);$('clips').appendChild(div)}}
-    else $('clips').textContent='Server ne job complete bataya, lekin response mein direct MP4 links nahi mile. Backend ke clip response format ko UI se map karna hoga.';
-    setStatus('Processing complete.','ok');break;
-   }
-   if(status==='error'||status==='failed')throw new Error(state.error||state.message||'Processing failed.');
-   setStatus('Job ID: '+job+'\nStatus: '+(state.status||'processing')+'\nProgress check ho raha hai…');
+  const form=new FormData();
+  form.append("video",file);
+  form.append("count",document.getElementById("count").value);
+  form.append("min_len",min);
+  form.append("max_len",max);
+  form.append("captions",document.getElementById("captions").checked);
+
+  const response=await fetch(API+"/make",{
+   method:"POST",
+   body:form
+  });
+
+  const data=await response.json();
+
+  if(!response.ok){
+   throw new Error(data.detail||"Upload failed");
   }
-  if(!done)setStatus('Processing abhi complete nahi hui. My clips/server logs check karo.','err');
- }catch(e){setStatus('Error: '+e.message,'err')}
- finally{$('makeBtn').disabled=false;$('makeBtn').textContent='⚡ Make clips'}
-};
-</script></body></html>
+
+  if(!data.job_id){
+   throw new Error("Server response mein job ID nahi mila.");
+  }
+
+  showStatus("Video uploaded. Processing started...",10);
+
+  let finished=false;
+
+  while(!finished){
+   await new Promise(resolve=>setTimeout(resolve,5000));
+
+   const check=await fetch(API+"/make/"+data.job_id);
+   const result=await check.json();
+
+   if(!check.ok){
+    throw new Error(result.detail||"Status check failed");
+   }
+
+   showStatus(result.message||"Processing...",result.progress||0);
+
+   if(result.status==="done"){
+    finished=true;
+    showStatus("Your clips are ready!",100);
+
+    document.getElementById("results").innerHTML=
+     "<h2>Your clips</h2>";
+
+    result.clips.forEach((clip)=>{
+     const url=API+clip.url;
+     const div=document.createElement("div");
+     div.className="clip";
+
+     const title=document.createElement("p");
+     title.textContent=clip.name;
+
+     const link=document.createElement("a");
+     link.href=url;
+     link.target="_blank";
+     link.rel="noopener";
+     link.textContent="Open / Download Clip";
+
+     div.append(title,link);
+     document.getElementById("results").appendChild(div);
+    });
+   }
+
+   if(result.status==="error"){
+    throw new Error(result.error||result.message||"Processing failed");
+   }
+  }
+
+ }catch(error){
+  showStatus("Error: "+error.message,0);
+ }finally{
+  button.disabled=false;
+ }
+}
+</script>
+</body>
+</html>
