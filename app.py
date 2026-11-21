@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from fast_engine import router as fast_router
+from fast_engine import finish_upload
 
 BASE = Path(__file__).resolve().parent
 WORK = BASE / "work"
@@ -20,7 +21,6 @@ WORK.mkdir(exist_ok=True)
 OUTPUTS.mkdir(exist_ok=True)
 
 app = FastAPI(title="NeonClipping")
-
 app.include_router(fast_router)
 
 app.add_middleware(
@@ -185,6 +185,71 @@ def health():
     return {"status": "ok"}
 
 
+# NEW: Chunk upload ko clipping engine se connect karta hai
+@app.post("/fast/{upload_id}/generate")
+async def generate_fast(
+    upload_id: str,
+    background_tasks: BackgroundTasks,
+    count: int = Query(3, ge=1, le=10),
+    min_len: int = Query(20, ge=1),
+    max_len: int = Query(60, ge=1)
+):
+    global BUSY
+
+    if max_len < min_len:
+        raise HTTPException(400, "Clip duration settings galat hain.")
+
+    with LOCK:
+        if BUSY:
+            raise HTTPException(
+                429,
+                "Ek video pehle se process ho rahi hai. Thoda wait karo."
+            )
+        BUSY = True
+
+    try:
+        result = await finish_upload(upload_id)
+
+        if result.get("status") != "completed":
+            raise HTTPException(400, "Upload complete nahi hui.")
+
+        source = Path(result["source"])
+
+        if not source.is_file():
+            raise HTTPException(404, "Uploaded video nahi mili.")
+
+        job_id = uuid.uuid4().hex[:12]
+
+        with LOCK:
+            JOBS[job_id] = {
+                "status": "queued",
+                "progress": 0,
+                "message": "Upload complete. Processing shuru ho rahi hai...",
+                "clips": [],
+                "error": None
+            }
+
+        background_tasks.add_task(
+            process_job,
+            job_id,
+            source,
+            count,
+            min_len,
+            max_len
+        )
+
+        return {
+            "job_id": job_id,
+            "status": "queued"
+        }
+
+    except Exception:
+        with LOCK:
+            BUSY = False
+        raise
+
+
+# OLD UPLOAD SYSTEM - PRESERVED
 @app.post("/make")
 async def make(
     request: Request,
