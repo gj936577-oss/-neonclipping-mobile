@@ -9,62 +9,141 @@
 
 <style>
 *{box-sizing:border-box}
+:root{
+ --bg:#090713;
+ --purple:#965cff;
+ --light:#d8baff;
+ --muted:#aaa1bd;
+}
 body{
- margin:0;min-height:100vh;padding:20px 16px 40px;color:#fff;
- font-family:Arial,sans-serif;
+ margin:0;min-height:100vh;padding:18px 15px 40px;
+ color:#fff;font-family:Arial,sans-serif;
  background:
- radial-gradient(ellipse at 15% 5%,rgba(130,65,220,.35),transparent 40%),
- radial-gradient(ellipse at 90% 55%,rgba(65,55,180,.25),transparent 42%),
+ radial-gradient(ellipse at 10% 0%,rgba(139,70,255,.28),transparent 38%),
+ radial-gradient(ellipse at 100% 45%,rgba(76,62,190,.23),transparent 40%),
  linear-gradient(145deg,#080711,#121020,#090713);
+ background-size:180% 180%;
+ animation:bgMove 14s ease infinite alternate;
+}
+@keyframes bgMove{
+ from{background-position:0% 0%}
+ to{background-position:100% 100%}
 }
 .container{max-width:520px;margin:auto}
-header{text-align:center;padding:28px 0 25px}
+header{text-align:center;padding:20px 0 22px}
 .logo{
- font-size:34px;font-weight:900;letter-spacing:2px;
- background:linear-gradient(100deg,#e6caff,#a77bff,#f2d5ff);
+ font-size:31px;font-weight:900;letter-spacing:2px;
+ background:linear-gradient(100deg,#fff,#b58aff,#e7caff);
  -webkit-background-clip:text;color:transparent;
+ text-shadow:0 0 28px rgba(166,105,255,.2);
 }
-header p{color:#aaa4bd;font-size:14px;margin-top:9px}
+.tagline{font-size:13px;color:var(--muted);margin-top:9px}
+.top-label{
+ display:inline-flex;align-items:center;gap:7px;
+ padding:7px 12px;border-radius:30px;
+ border:1px solid rgba(183,140,255,.28);
+ background:rgba(150,92,255,.1);
+ color:#d8baff;font-size:10px;letter-spacing:1.4px;
+ margin-bottom:15px;
+}
+.dot{
+ width:7px;height:7px;border-radius:50%;
+ background:#a879ff;box-shadow:0 0 10px #a879ff;
+ animation:pulse 1.5s infinite;
+}
+@keyframes pulse{50%{opacity:.35;transform:scale(.7)}}
 .glass{
- background:rgba(255,255,255,.075);
- border:1px solid rgba(255,255,255,.14);
- border-radius:23px;padding:21px;margin:16px 0;
- box-shadow:0 12px 40px rgba(0,0,0,.25);
- backdrop-filter:blur(24px);
- -webkit-backdrop-filter:blur(24px);
+ background:rgba(255,255,255,.065);
+ border:1px solid rgba(255,255,255,.13);
+ border-radius:23px;padding:20px;margin:15px 0;
+ box-shadow:0 15px 45px rgba(0,0,0,.24);
+ backdrop-filter:blur(22px);
+ -webkit-backdrop-filter:blur(22px);
+ animation:rise .6s ease both;
 }
-.section-title{font-size:17px;font-weight:bold;margin:0 0 18px;color:#eadcff}
-label{display:block;color:#ded6ed;font-size:13px;margin:17px 0 8px}
+@keyframes rise{
+ from{opacity:0;transform:translateY(15px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.section-title{
+ font-size:17px;font-weight:bold;margin:0 0 7px;color:#eadcff
+}
+.subtitle{font-size:12px;color:#9991aa;margin:0 0 19px;line-height:1.5}
+.source-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.source-tab{
+ border:1px solid rgba(255,255,255,.13);
+ border-radius:15px;padding:14px 8px;
+ background:rgba(10,8,25,.55);
+ text-align:center;cursor:pointer;
+ transition:.25s;
+}
+.source-tab.active{
+ border-color:#a879ff;
+ background:rgba(139,83,235,.18);
+ box-shadow:0 0 20px rgba(150,92,255,.14);
+}
+.source-icon{font-size:23px;margin-bottom:7px}
+.source-name{font-size:13px;font-weight:bold}
+.source-desc{font-size:10px;color:#9991aa;margin-top:5px}
+.panel{display:none;animation:rise .3s ease}
+.panel.active{display:block}
+label{
+ display:block;color:#ded6ed;font-size:13px;
+ margin:17px 0 8px
+}
 input,select{
- width:100%;min-height:48px;padding:13px;color:white;
- background:rgba(10,8,25,.65);
+ width:100%;min-height:48px;padding:13px;
+ color:white;background:rgba(10,8,25,.7);
  border:1px solid rgba(255,255,255,.16);
  border-radius:13px;outline:none;font-size:14px;
 }
-input:focus,select:focus{border-color:#b78aff}
+input:focus,select:focus{
+ border-color:#b78aff;box-shadow:0 0 0 3px rgba(160,105,255,.1)
+}
 input[type=file]{padding:11px;font-size:12px}
 select option{background:#171426;color:white}
-.file-info{color:#aaa1ba;font-size:12px;margin-top:8px;overflow-wrap:anywhere}
+.file-info{color:#aaa1ba;font-size:12px;margin-top:9px;overflow-wrap:anywhere}
+.notice{
+ margin-top:12px;padding:12px;border-radius:12px;
+ background:rgba(255,190,90,.07);
+ border:1px solid rgba(255,190,90,.18);
+ color:#d9bd91;font-size:11px;line-height:1.5;
+}
+.settings{
+ margin-top:21px;padding-top:17px;
+ border-top:1px solid rgba(255,255,255,.1)
+}
+.settings-title{font-size:14px;font-weight:bold;color:#e6d6ff}
 button{
  width:100%;padding:16px;margin-top:22px;
- border:1px solid rgba(255,255,255,.25);
- border-radius:15px;color:white;font-size:15px;font-weight:bold;
- letter-spacing:1px;
- background:linear-gradient(110deg,#7944d9,#ae62ed,#7545d9);
- box-shadow:0 6px 25px rgba(139,76,230,.3);cursor:pointer;
+ border:1px solid rgba(255,255,255,.2);
+ border-radius:15px;color:white;font-size:14px;
+ font-weight:bold;letter-spacing:1px;
+ background:linear-gradient(110deg,#7540d5,#ae62ed,#7545d9);
+ background-size:200% 100%;
+ box-shadow:0 6px 25px rgba(139,76,230,.28);
+ cursor:pointer;transition:transform .2s,box-shadow .2s;
+ animation:buttonGlow 3s infinite alternate;
 }
-button:disabled{opacity:.45;cursor:not-allowed}
-.small{font-size:11px;color:#9d96ae;text-align:center;margin:14px 0 0}
+@keyframes buttonGlow{
+ from{box-shadow:0 5px 18px rgba(139,76,230,.2)}
+ to{box-shadow:0 5px 28px rgba(139,76,230,.48)}
+}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.45;cursor:not-allowed;animation:none}
+.small{font-size:11px;color:#9d96ae;text-align:center;margin:13px 0 0}
 .status-card{text-align:center}
 .status-icon{
- width:48px;height:48px;margin:0 auto 14px;
- display:grid;place-items:center;border-radius:16px;
+ width:52px;height:52px;margin:0 auto 14px;
+ display:grid;place-items:center;border-radius:17px;
  background:rgba(177,123,255,.15);
- border:1px solid rgba(205,168,255,.2);font-size:23px;
+ border:1px solid rgba(205,168,255,.2);
+ font-size:23px;animation:float 3s ease-in-out infinite;
 }
-#status{color:#e2d2ff;font-size:14px;min-height:20px;line-height:1.5}
+@keyframes float{50%{transform:translateY(-5px)}}
+#status{color:#e2d2ff;font-size:13px;min-height:20px;line-height:1.5}
 .progress{
- height:13px;margin-top:19px;background:rgba(255,255,255,.11);
+ height:12px;margin-top:19px;background:rgba(255,255,255,.11);
  border:1px solid rgba(255,255,255,.12);
  border-radius:30px;overflow:hidden;
 }
@@ -72,7 +151,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
  width:0%;height:100%;border-radius:30px;
  background:linear-gradient(90deg,#874aff,#d7a5ff,#9d65ff);
  box-shadow:0 0 15px #a66bff;
- transition:width .15s ease;position:relative;overflow:hidden;
+ transition:width .35s ease;position:relative;overflow:hidden;
 }
 #bar.active:after{
  content:"";position:absolute;top:0;left:-45%;
@@ -81,26 +160,37 @@ button:disabled{opacity:.45;cursor:not-allowed}
 }
 @keyframes shine{from{left:-45%}to{left:120%}}
 #percentage{
- font-size:29px;font-weight:bold;color:#d8baff;
+ font-size:30px;font-weight:bold;color:#d8baff;
  margin-top:13px;font-variant-numeric:tabular-nums;
 }
 #speed{font-size:12px;color:#aaa1ba;margin-top:5px}
-#results{margin-top:20px}
+#results{margin-top:20px;text-align:left}
 .clip{
  background:rgba(255,255,255,.065);
  border:1px solid rgba(255,255,255,.14);
  border-radius:18px;padding:14px;margin:15px 0;
+ animation:rise .45s ease both;
 }
-.clip h3{color:#e7d6ff;font-size:16px}
+.clip h3{color:#e7d6ff;font-size:15px}
 .clip video{width:100%;border-radius:13px;background:#000}
 .download{
  display:block;text-align:center;text-decoration:none;color:white;
  padding:14px;border-radius:12px;margin-top:12px;
  background:linear-gradient(100deg,#7944d9,#a34ce5);
- font-weight:bold;font-size:14px;
+ font-weight:bold;font-size:13px;
 }
 .footer{text-align:center;color:#716b81;font-size:11px;margin-top:25px}
-@media(max-width:380px){.logo{font-size:28px}.glass{padding:17px}}
+.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}
+.feature{
+ background:rgba(255,255,255,.045);
+ border:1px solid rgba(255,255,255,.09);
+ border-radius:13px;padding:13px 5px;text-align:center;
+}
+.feature-icon{font-size:19px}
+.feature-text{font-size:10px;color:#bdb2d0;margin-top:7px}
+@media(max-width:380px){
+ .logo{font-size:26px}.glass{padding:16px}
+}
 </style>
 </head>
 
@@ -108,43 +198,94 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="container">
 
 <header>
+ <div class="top-label"><span class="dot"></span> AI VIDEO CLIPPING STUDIO</div>
  <div class="logo">NEONCLIPPING</div>
- <p>Turn your videos into vertical clips</p>
+ <p class="tagline">Turn long videos into vertical clips</p>
 </header>
 
 <div class="glass">
  <h2 class="section-title">✦ Create Your Clips</h2>
+ <p class="subtitle">Choose your video source and customize your clips.</p>
 
- <label>Select Your Video</label>
- <input type="file" id="video"
- accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
- <div class="file-info" id="fileInfo">Choose a video from your device</div>
+ <div class="source-tabs">
+  <div class="source-tab active" id="uploadTab" onclick="switchSource('upload')">
+   <div class="source-icon">📁</div>
+   <div class="source-name">Upload Video</div>
+   <div class="source-desc">From your device</div>
+  </div>
+  <div class="source-tab" id="youtubeTab" onclick="switchSource('youtube')">
+   <div class="source-icon">▶️</div>
+   <div class="source-name">YouTube Link</div>
+   <div class="source-desc">Paste a video URL</div>
+  </div>
+ </div>
 
- <label>Number of Clips</label>
- <select id="count">
-  <option value="1">1 Clip</option>
-  <option value="2">2 Clips</option>
-  <option value="3" selected>3 Clips</option>
-  <option value="5">5 Clips</option>
-  <option value="10">10 Clips</option>
- </select>
+ <div class="panel active" id="uploadPanel">
+  <label>Select Your Video</label>
+  <input type="file" id="video"
+   accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+  <div class="file-info" id="fileInfo">Choose a video from your device</div>
+ </div>
 
- <label>Minimum Clip Length</label>
- <select id="min">
-  <option value="15">15 Seconds</option>
-  <option value="20" selected>20 Seconds</option>
-  <option value="30">30 Seconds</option>
- </select>
+ <div class="panel" id="youtubePanel">
+  <label>Paste YouTube Video Link</label>
+  <input type="url" id="youtubeUrl"
+   placeholder="https://www.youtube.com/watch?v=...">
+  <div class="notice">
+   YouTube link entry is being prepared. Public availability does not automatically grant download rights. Direct importing will require an authorized video source.
+  </div>
+  <button type="button" onclick="checkYoutubeLink()" style="margin-top:13px">
+   CHECK VIDEO LINK
+  </button>
+  <div class="file-info" id="youtubeMessage"></div>
+ </div>
 
- <label>Maximum Clip Length</label>
- <select id="max">
-  <option value="30">30 Seconds</option>
-  <option value="60" selected>60 Seconds</option>
-  <option value="90">90 Seconds</option>
- </select>
+ <div class="settings">
+  <div class="settings-title">⚙ Clip Settings</div>
 
- <button id="generate" onclick="generateClips()">GENERATE CLIPS ✦</button>
- <p class="small">Maximum upload size: 500 MB</p>
+  <label>Number of Clips</label>
+  <select id="count">
+   <option value="1">1 Clip</option>
+   <option value="2">2 Clips</option>
+   <option value="3" selected>3 Clips</option>
+   <option value="5">5 Clips</option>
+   <option value="10">10 Clips</option>
+  </select>
+
+  <label>Minimum Clip Length</label>
+  <select id="min">
+   <option value="15">15 Seconds</option>
+   <option value="20" selected>20 Seconds</option>
+   <option value="30">30 Seconds</option>
+  </select>
+
+  <label>Maximum Clip Length</label>
+  <select id="max">
+   <option value="30">30 Seconds</option>
+   <option value="60" selected>60 Seconds</option>
+   <option value="90">90 Seconds</option>
+  </select>
+
+  <button id="generate" onclick="generateClips()">
+   ✦ GENERATE CLIPS
+  </button>
+  <p class="small">Maximum upload size: 500 MB</p>
+ </div>
+</div>
+
+<div class="feature-row">
+ <div class="feature">
+  <div class="feature-icon">⚡</div>
+  <div class="feature-text">Fast Engine</div>
+ </div>
+ <div class="feature">
+  <div class="feature-icon">✦</div>
+  <div class="feature-text">AI Clipping</div>
+ </div>
+ <div class="feature">
+  <div class="feature-icon">⬇</div>
+  <div class="feature-text">Easy Downloads</div>
+ </div>
 </div>
 
 <div class="glass status-card">
@@ -163,8 +304,41 @@ button:disabled{opacity:.45;cursor:not-allowed}
 const API="https://neonclipping-mobile.onrender.com";
 const CHUNK_WORKERS=3;
 let busy=false;
+let currentSource="upload";
 
 const videoInput=document.getElementById("video");
+
+function switchSource(source){
+ if(busy)return;
+ currentSource=source;
+
+ document.getElementById("uploadTab").classList.toggle("active",source==="upload");
+ document.getElementById("youtubeTab").classList.toggle("active",source==="youtube");
+ document.getElementById("uploadPanel").classList.toggle("active",source==="upload");
+ document.getElementById("youtubePanel").classList.toggle("active",source==="youtube");
+}
+
+function checkYoutubeLink(){
+ const input=document.getElementById("youtubeUrl").value.trim();
+ const message=document.getElementById("youtubeMessage");
+
+ try{
+  const url=new URL(input);
+  const valid=
+   (url.hostname==="youtube.com"||
+    url.hostname==="www.youtube.com"||
+    url.hostname==="m.youtube.com"||
+    url.hostname==="youtu.be"||
+    url.hostname==="www.youtu.be") &&
+   (url.pathname!=="/"||url.hostname.includes("youtu.be")||url.searchParams.has("v"));
+
+  if(!valid)throw new Error();
+
+  message.textContent="Valid YouTube URL format detected. Authorized video importing is not connected yet.";
+ }catch(error){
+  message.textContent="Please enter a valid YouTube video URL.";
+ }
+}
 
 videoInput.addEventListener("change",()=>{
  const file=videoInput.files[0];
@@ -275,7 +449,6 @@ async function uploadVideo(file,session){
  let uploadedBytes=0;
  let nextIndex=0;
  let failed=null;
-
  const startedAt=performance.now();
 
  function updateProgress(){
@@ -286,8 +459,7 @@ async function uploadVideo(file,session){
   showStatus(
    "Uploading video • "+(uploadedBytes/1024/1024).toFixed(1)+
    " / "+(file.size/1024/1024).toFixed(1)+" MB",
-   percent,
-   true
+   percent,true
   );
 
   document.getElementById("speed").textContent=
@@ -296,7 +468,7 @@ async function uploadVideo(file,session){
 
  async function worker(){
   while(true){
-   if(failed) return;
+   if(failed)return;
 
    const index=nextIndex++;
    if(index>=totalChunks)return;
@@ -307,9 +479,7 @@ async function uploadVideo(file,session){
 
    try{
     await uploadChunk(
-     uploadId,
-     index,
-     blob,
+     uploadId,index,blob,
      loadedNow=>{
       const next=Math.min(loadedNow,blob.size);
       uploadedBytes+=next-loaded[index];
@@ -340,6 +510,13 @@ async function uploadVideo(file,session){
 
 async function generateClips(){
  if(busy)return;
+
+ if(currentSource==="youtube"){
+  checkYoutubeLink();
+  showStatus("YouTube importing is not connected yet.",0,false);
+  document.getElementById("speed").textContent="Use an authorized video file upload for now.";
+  return;
+ }
 
  const file=videoInput.files[0];
 
@@ -410,37 +587,32 @@ async function generateClips(){
 }
 
 async function checkJob(id){
- try{
-  while(true){
-   const response=await fetch(API+"/make/"+id);
+ while(true){
+  const response=await fetch(API+"/make/"+id);
 
-   if(!response.ok)throw new Error("Job status check failed");
+  if(!response.ok)throw new Error("Job status check failed");
 
-   const job=await response.json();
+  const job=await response.json();
 
-   if(job.status==="completed"){
-    displayClips(job.clips||[]);
-    showStatus("Your clips are ready!",100,false);
-    document.getElementById("speed").textContent="Completed";
-    break;
-   }
-
-   if(job.status==="error"){
-    throw new Error(job.error||"Clip generation failed");
-   }
-
-   showStatus(
-    job.message||"Processing your video...",
-    Number(job.progress)||0,
-    true
-   );
-
-   document.getElementById("speed").textContent="Clip generation in progress";
-
-   await new Promise(resolve=>setTimeout(resolve,3000));
+  if(job.status==="completed"){
+   displayClips(job.clips||[]);
+   showStatus("Your clips are ready!",100,false);
+   document.getElementById("speed").textContent="Completed";
+   break;
   }
- }catch(error){
-  throw error;
+
+  if(job.status==="error"){
+   throw new Error(job.error||"Clip generation failed");
+  }
+
+  showStatus(
+   job.message||"Processing your video...",
+   Number(job.progress)||0,true
+  );
+
+  document.getElementById("speed").textContent="Clip generation in progress";
+
+  await new Promise(resolve=>setTimeout(resolve,3000));
  }
 }
 
