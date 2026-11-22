@@ -6,197 +6,107 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#090713">
 <title>NeonClipping AI</title>
-
 <style>
 *{box-sizing:border-box}
-:root{
- --bg:#090713;
- --purple:#965cff;
- --light:#d8baff;
- --muted:#aaa1bd;
-}
+:root{--purple:#965cff;--muted:#aaa1bd}
 body{
- margin:0;min-height:100vh;padding:18px 15px 40px;
- color:#fff;font-family:Arial,sans-serif;
- background:
- radial-gradient(ellipse at 10% 0%,rgba(139,70,255,.28),transparent 38%),
+ margin:0;min-height:100vh;padding:18px 15px 40px;color:white;
+ font-family:Arial,sans-serif;
+ background:radial-gradient(ellipse at 10% 0%,rgba(139,70,255,.28),transparent 38%),
  radial-gradient(ellipse at 100% 45%,rgba(76,62,190,.23),transparent 40%),
  linear-gradient(145deg,#080711,#121020,#090713);
- background-size:180% 180%;
- animation:bgMove 14s ease infinite alternate;
+ background-size:180% 180%;animation:bgMove 14s ease infinite alternate
 }
-@keyframes bgMove{
- from{background-position:0% 0%}
- to{background-position:100% 100%}
-}
+@keyframes bgMove{to{background-position:100% 100%}}
 .container{max-width:520px;margin:auto}
 header{text-align:center;padding:20px 0 22px}
 .logo{
  font-size:31px;font-weight:900;letter-spacing:2px;
  background:linear-gradient(100deg,#fff,#b58aff,#e7caff);
- -webkit-background-clip:text;color:transparent;
- text-shadow:0 0 28px rgba(166,105,255,.2);
+ -webkit-background-clip:text;color:transparent
 }
 .tagline{font-size:13px;color:var(--muted);margin-top:9px}
 .top-label{
- display:inline-flex;align-items:center;gap:7px;
- padding:7px 12px;border-radius:30px;
- border:1px solid rgba(183,140,255,.28);
- background:rgba(150,92,255,.1);
- color:#d8baff;font-size:10px;letter-spacing:1.4px;
- margin-bottom:15px;
+ display:inline-flex;align-items:center;gap:7px;padding:7px 12px;
+ border-radius:30px;border:1px solid rgba(183,140,255,.28);
+ background:rgba(150,92,255,.1);color:#d8baff;
+ font-size:10px;letter-spacing:1.4px;margin-bottom:15px
 }
-.dot{
- width:7px;height:7px;border-radius:50%;
- background:#a879ff;box-shadow:0 0 10px #a879ff;
- animation:pulse 1.5s infinite;
-}
+.dot{width:7px;height:7px;border-radius:50%;background:#a879ff;animation:pulse 1.5s infinite}
 @keyframes pulse{50%{opacity:.35;transform:scale(.7)}}
 .glass{
- background:rgba(255,255,255,.065);
- border:1px solid rgba(255,255,255,.13);
+ background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.13);
  border-radius:23px;padding:20px;margin:15px 0;
  box-shadow:0 15px 45px rgba(0,0,0,.24);
- backdrop-filter:blur(22px);
- -webkit-backdrop-filter:blur(22px);
- animation:rise .6s ease both;
+ backdrop-filter:blur(22px);animation:rise .6s ease both
 }
-@keyframes rise{
- from{opacity:0;transform:translateY(15px)}
- to{opacity:1;transform:translateY(0)}
-}
-.section-title{
- font-size:17px;font-weight:bold;margin:0 0 7px;color:#eadcff
-}
+@keyframes rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.section-title{font-size:17px;margin:0 0 7px;color:#eadcff}
 .subtitle{font-size:12px;color:#9991aa;margin:0 0 19px;line-height:1.5}
 .source-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .source-tab{
- border:1px solid rgba(255,255,255,.13);
- border-radius:15px;padding:14px 8px;
- background:rgba(10,8,25,.55);
- text-align:center;cursor:pointer;
- transition:.25s;
+ border:1px solid rgba(255,255,255,.13);border-radius:15px;
+ padding:14px 8px;background:rgba(10,8,25,.55);
+ text-align:center;cursor:pointer
 }
-.source-tab.active{
- border-color:#a879ff;
- background:rgba(139,83,235,.18);
- box-shadow:0 0 20px rgba(150,92,255,.14);
-}
+.source-tab.active{border-color:#a879ff;background:rgba(139,83,235,.18)}
 .source-icon{font-size:23px;margin-bottom:7px}
 .source-name{font-size:13px;font-weight:bold}
 .source-desc{font-size:10px;color:#9991aa;margin-top:5px}
 .panel{display:none;animation:rise .3s ease}
 .panel.active{display:block}
-label{
- display:block;color:#ded6ed;font-size:13px;
- margin:17px 0 8px
-}
+label{display:block;color:#ded6ed;font-size:13px;margin:17px 0 8px}
 input,select{
- width:100%;min-height:48px;padding:13px;
- color:white;background:rgba(10,8,25,.7);
- border:1px solid rgba(255,255,255,.16);
- border-radius:13px;outline:none;font-size:14px;
+ width:100%;min-height:48px;padding:13px;color:white;
+ background:rgba(10,8,25,.7);border:1px solid rgba(255,255,255,.16);
+ border-radius:13px;outline:none;font-size:14px
 }
-input:focus,select:focus{
- border-color:#b78aff;box-shadow:0 0 0 3px rgba(160,105,255,.1)
-}
+input:focus,select:focus{border-color:#b78aff}
 input[type=file]{padding:11px;font-size:12px}
 select option{background:#171426;color:white}
 .file-info{color:#aaa1ba;font-size:12px;margin-top:9px;overflow-wrap:anywhere}
 .notice{
  margin-top:12px;padding:12px;border-radius:12px;
- background:rgba(255,190,90,.07);
- border:1px solid rgba(255,190,90,.18);
- color:#d9bd91;font-size:11px;line-height:1.5;
+ background:rgba(255,190,90,.07);border:1px solid rgba(255,190,90,.18);
+ color:#d9bd91;font-size:11px;line-height:1.5
 }
-.settings{
- margin-top:21px;padding-top:17px;
- border-top:1px solid rgba(255,255,255,.1)
-}
+.permission{display:flex;align-items:flex-start;gap:9px;margin-top:14px;color:#ddd;font-size:12px;line-height:1.5}
+.permission input{width:19px;min-width:19px;min-height:19px;margin:0}
+.settings{margin-top:21px;padding-top:17px;border-top:1px solid rgba(255,255,255,.1)}
 .settings-title{font-size:14px;font-weight:bold;color:#e6d6ff}
 button{
- width:100%;padding:16px;margin-top:22px;
- border:1px solid rgba(255,255,255,.2);
- border-radius:15px;color:white;font-size:14px;
- font-weight:bold;letter-spacing:1px;
+ width:100%;padding:16px;margin-top:22px;border:1px solid rgba(255,255,255,.2);
+ border-radius:15px;color:white;font-size:14px;font-weight:bold;letter-spacing:1px;
  background:linear-gradient(110deg,#7540d5,#ae62ed,#7545d9);
- background-size:200% 100%;
- box-shadow:0 6px 25px rgba(139,76,230,.28);
- cursor:pointer;transition:transform .2s,box-shadow .2s;
- animation:buttonGlow 3s infinite alternate;
+ box-shadow:0 6px 25px rgba(139,76,230,.28);cursor:pointer
 }
-@keyframes buttonGlow{
- from{box-shadow:0 5px 18px rgba(139,76,230,.2)}
- to{box-shadow:0 5px 28px rgba(139,76,230,.48)}
-}
-button:active{transform:scale(.97)}
-button:disabled{opacity:.45;cursor:not-allowed;animation:none}
+button:disabled{opacity:.45;cursor:not-allowed}
 .small{font-size:11px;color:#9d96ae;text-align:center;margin:13px 0 0}
 .status-card{text-align:center}
 .status-icon{
- width:52px;height:52px;margin:0 auto 14px;
- display:grid;place-items:center;border-radius:17px;
- background:rgba(177,123,255,.15);
- border:1px solid rgba(205,168,255,.2);
- font-size:23px;animation:float 3s ease-in-out infinite;
+ width:52px;height:52px;margin:0 auto 14px;display:grid;place-items:center;
+ border-radius:17px;background:rgba(177,123,255,.15);font-size:23px
 }
-@keyframes float{50%{transform:translateY(-5px)}}
 #status{color:#e2d2ff;font-size:13px;min-height:20px;line-height:1.5}
-.progress{
- height:12px;margin-top:19px;background:rgba(255,255,255,.11);
- border:1px solid rgba(255,255,255,.12);
- border-radius:30px;overflow:hidden;
-}
-#bar{
- width:0%;height:100%;border-radius:30px;
- background:linear-gradient(90deg,#874aff,#d7a5ff,#9d65ff);
- box-shadow:0 0 15px #a66bff;
- transition:width .35s ease;position:relative;overflow:hidden;
-}
-#bar.active:after{
- content:"";position:absolute;top:0;left:-45%;
- width:35%;height:100%;background:rgba(255,255,255,.55);
- transform:skewX(-25deg);animation:shine 1.3s infinite;
-}
-@keyframes shine{from{left:-45%}to{left:120%}}
-#percentage{
- font-size:30px;font-weight:bold;color:#d8baff;
- margin-top:13px;font-variant-numeric:tabular-nums;
-}
+.progress{height:12px;margin-top:19px;background:rgba(255,255,255,.11);border-radius:30px;overflow:hidden}
+#bar{width:0%;height:100%;border-radius:30px;background:linear-gradient(90deg,#874aff,#d7a5ff,#9d65ff);transition:width .35s}
+#percentage{font-size:30px;font-weight:bold;color:#d8baff;margin-top:13px}
 #speed{font-size:12px;color:#aaa1ba;margin-top:5px}
 #results{margin-top:20px;text-align:left}
-.clip{
- background:rgba(255,255,255,.065);
- border:1px solid rgba(255,255,255,.14);
- border-radius:18px;padding:14px;margin:15px 0;
- animation:rise .45s ease both;
-}
+.clip{background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:14px;margin:15px 0}
 .clip h3{color:#e7d6ff;font-size:15px}
 .clip video{width:100%;border-radius:13px;background:#000}
-.download{
- display:block;text-align:center;text-decoration:none;color:white;
- padding:14px;border-radius:12px;margin-top:12px;
- background:linear-gradient(100deg,#7944d9,#a34ce5);
- font-weight:bold;font-size:13px;
-}
+.download{display:block;text-align:center;text-decoration:none;color:white;padding:14px;border-radius:12px;margin-top:12px;background:linear-gradient(100deg,#7944d9,#a34ce5);font-weight:bold;font-size:13px}
 .footer{text-align:center;color:#716b81;font-size:11px;margin-top:25px}
 .feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}
-.feature{
- background:rgba(255,255,255,.045);
- border:1px solid rgba(255,255,255,.09);
- border-radius:13px;padding:13px 5px;text-align:center;
-}
+.feature{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:13px 5px;text-align:center}
 .feature-icon{font-size:19px}
 .feature-text{font-size:10px;color:#bdb2d0;margin-top:7px}
-@media(max-width:380px){
- .logo{font-size:26px}.glass{padding:16px}
-}
+@media(max-width:380px){.logo{font-size:26px}.glass{padding:16px}}
 </style>
 </head>
-
 <body>
 <div class="container">
-
 <header>
  <div class="top-label"><span class="dot"></span> AI VIDEO CLIPPING STUDIO</div>
  <div class="logo">NEONCLIPPING</div>
@@ -209,83 +119,62 @@ button:disabled{opacity:.45;cursor:not-allowed;animation:none}
 
  <div class="source-tabs">
   <div class="source-tab active" id="uploadTab" onclick="switchSource('upload')">
-   <div class="source-icon">📁</div>
-   <div class="source-name">Upload Video</div>
+   <div class="source-icon">📁</div><div class="source-name">Upload Video</div>
    <div class="source-desc">From your device</div>
   </div>
   <div class="source-tab" id="youtubeTab" onclick="switchSource('youtube')">
-   <div class="source-icon">▶️</div>
-   <div class="source-name">YouTube Link</div>
-   <div class="source-desc">Paste a video URL</div>
+   <div class="source-icon">▶️</div><div class="source-name">Creator Video URL</div>
+   <div class="source-desc">Authorized video file</div>
   </div>
  </div>
 
  <div class="panel active" id="uploadPanel">
   <label>Select Your Video</label>
-  <input type="file" id="video"
-   accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+  <input type="file" id="video" accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
   <div class="file-info" id="fileInfo">Choose a video from your device</div>
  </div>
 
  <div class="panel" id="youtubePanel">
-  <label>Paste YouTube Video Link</label>
-  <input type="url" id="youtubeUrl"
-   placeholder="https://www.youtube.com/watch?v=...">
+  <label>Authorized Direct Video URL</label>
+  <input type="url" id="youtubeUrl" placeholder="https://your-host.com/video.mp4">
   <div class="notice">
-   YouTube link entry is being prepared. Public availability does not automatically grant download rights. Direct importing will require an authorized video source.
+   Use only a direct MP4, MOV, MKV or WEBM file URL from an approved host.
+   A YouTube watch link is not a direct video file.
   </div>
-  <button type="button" onclick="checkYoutubeLink()" style="margin-top:13px">
-   CHECK VIDEO LINK
-  </button>
+  <label class="permission">
+   <input type="checkbox" id="creatorPermission">
+   <span>I confirm that the creator has authorized me to use and edit this video.</span>
+  </label>
   <div class="file-info" id="youtubeMessage"></div>
  </div>
 
  <div class="settings">
   <div class="settings-title">⚙ Clip Settings</div>
-
   <label>Number of Clips</label>
   <select id="count">
-   <option value="1">1 Clip</option>
-   <option value="2">2 Clips</option>
-   <option value="3" selected>3 Clips</option>
-   <option value="5">5 Clips</option>
+   <option value="1">1 Clip</option><option value="2">2 Clips</option>
+   <option value="3" selected>3 Clips</option><option value="5">5 Clips</option>
    <option value="10">10 Clips</option>
   </select>
-
   <label>Minimum Clip Length</label>
   <select id="min">
-   <option value="15">15 Seconds</option>
-   <option value="20" selected>20 Seconds</option>
+   <option value="15">15 Seconds</option><option value="20" selected>20 Seconds</option>
    <option value="30">30 Seconds</option>
   </select>
-
   <label>Maximum Clip Length</label>
   <select id="max">
-   <option value="30">30 Seconds</option>
-   <option value="60" selected>60 Seconds</option>
+   <option value="30">30 Seconds</option><option value="60" selected>60 Seconds</option>
    <option value="90">90 Seconds</option>
   </select>
-
-  <button id="generate" onclick="generateClips()">
-   ✦ GENERATE CLIPS
-  </button>
+  <button id="generate" onclick="generateClips()">✦ GENERATE CLIPS</button>
   <p class="small">Maximum upload size: 500 MB</p>
  </div>
 </div>
 
 <div class="feature-row">
- <div class="feature">
-  <div class="feature-icon">⚡</div>
-  <div class="feature-text">Fast Engine</div>
- </div>
- <div class="feature">
-  <div class="feature-icon">✦</div>
-  <div class="feature-text">AI Clipping</div>
- </div>
- <div class="feature">
-  <div class="feature-icon">⬇</div>
-  <div class="feature-text">Easy Downloads</div>
- </div>
+ <div class="feature"><div class="feature-icon">⚡</div><div class="feature-text">Fast Engine</div></div>
+ <div class="feature"><div class="feature-icon">✦</div><div class="feature-text">AI Clipping</div></div>
+ <div class="feature"><div class="feature-icon">⬇</div><div class="feature-text">Easy Downloads</div></div>
 </div>
 
 <div class="glass status-card">
@@ -296,55 +185,28 @@ button:disabled{opacity:.45;cursor:not-allowed;animation:none}
  <div id="speed">Ready</div>
  <div id="results"></div>
 </div>
-
 <div class="footer">NEONCLIPPING AI • CREATE SOMETHING AMAZING</div>
 </div>
 
 <script>
 const API="https://neonclipping-mobile.onrender.com";
 const CHUNK_WORKERS=3;
-let busy=false;
-let currentSource="upload";
-
+let busy=false,currentSource="upload";
 const videoInput=document.getElementById("video");
 
 function switchSource(source){
  if(busy)return;
  currentSource=source;
-
  document.getElementById("uploadTab").classList.toggle("active",source==="upload");
  document.getElementById("youtubeTab").classList.toggle("active",source==="youtube");
  document.getElementById("uploadPanel").classList.toggle("active",source==="upload");
  document.getElementById("youtubePanel").classList.toggle("active",source==="youtube");
 }
 
-function checkYoutubeLink(){
- const input=document.getElementById("youtubeUrl").value.trim();
- const message=document.getElementById("youtubeMessage");
-
- try{
-  const url=new URL(input);
-  const valid=
-   (url.hostname==="youtube.com"||
-    url.hostname==="www.youtube.com"||
-    url.hostname==="m.youtube.com"||
-    url.hostname==="youtu.be"||
-    url.hostname==="www.youtu.be") &&
-   (url.pathname!=="/"||url.hostname.includes("youtu.be")||url.searchParams.has("v"));
-
-  if(!valid)throw new Error();
-
-  message.textContent="Valid YouTube URL format detected. Authorized video importing is not connected yet.";
- }catch(error){
-  message.textContent="Please enter a valid YouTube video URL.";
- }
-}
-
 videoInput.addEventListener("change",()=>{
  const file=videoInput.files[0];
- document.getElementById("fileInfo").textContent=
- file ? file.name+" • "+(file.size/1024/1024).toFixed(2)+" MB"
- : "Choose a video from your device";
+ document.getElementById("fileInfo").textContent=file?
+ file.name+" • "+(file.size/1024/1024).toFixed(2)+" MB":"Choose a video from your device";
 });
 
 function showStatus(message,progress,active=true){
@@ -352,15 +214,11 @@ function showStatus(message,progress,active=true){
  document.getElementById("status").textContent=message;
  const value=Math.max(0,Math.min(100,Number(progress)||0));
  bar.style.width=value+"%";
- bar.classList.toggle("active",active);
  document.getElementById("percentage").textContent=Math.round(value)+"%";
 }
 
-function formatSpeed(bytesPerSecond){
- if(bytesPerSecond>=1024*1024){
-  return (bytesPerSecond/1024/1024).toFixed(2)+" MB/s";
- }
- return (bytesPerSecond/1024).toFixed(1)+" KB/s";
+function formatSpeed(bytes){
+ return bytes>=1048576?(bytes/1048576).toFixed(2)+" MB/s":(bytes/1024).toFixed(1)+" KB/s";
 }
 
 function xhrChunk(url,blob,onProgress){
@@ -368,285 +226,176 @@ function xhrChunk(url,blob,onProgress){
   const xhr=new XMLHttpRequest();
   xhr.open("PUT",url);
   xhr.setRequestHeader("Content-Type","application/octet-stream");
-  xhr.timeout=0;
-
-  xhr.upload.onprogress=e=>{
-   if(e.lengthComputable)onProgress(e.loaded);
-  };
-
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(e.loaded)};
   xhr.onload=()=>{
-   if(xhr.status>=200&&xhr.status<300){
-    resolve();
-   }else{
-    let message="Chunk upload failed";
-    try{
-     const data=JSON.parse(xhr.responseText);
-     message=data.detail||message;
-    }catch(e){}
-    reject(new Error(message));
+   if(xhr.status>=200&&xhr.status<300)resolve();
+   else{
+    let msg="Chunk upload failed";
+    try{msg=JSON.parse(xhr.responseText).detail||msg}catch(e){}
+    reject(new Error(msg));
    }
   };
-
   xhr.onerror=()=>reject(new Error("Network connection failed"));
-  xhr.onabort=()=>reject(new Error("Upload cancelled"));
   xhr.send(blob);
  });
 }
 
-async function uploadChunk(uploadId,index,blob,onProgress){
- let lastError;
-
+async function uploadChunk(id,index,blob,onProgress){
+ let error;
  for(let attempt=1;attempt<=3;attempt++){
   try{
-   await xhrChunk(
-    API+"/fast/"+uploadId+"/chunks/"+index,
-    blob,
-    onProgress
-   );
-   onProgress(blob.size);
-   return;
-  }catch(error){
-   lastError=error;
-   onProgress(0);
-   if(attempt<3){
-    await new Promise(r=>setTimeout(r,1000*attempt));
-   }
+   await xhrChunk(API+"/fast/"+id+"/chunks/"+index,blob,onProgress);
+   onProgress(blob.size);return;
+  }catch(e){
+   error=e;onProgress(0);
+   if(attempt<3)await new Promise(r=>setTimeout(r,1000*attempt));
   }
  }
-
- throw lastError;
+ throw error;
 }
 
 async function startUpload(file){
  const response=await fetch(API+"/fast/start",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   filename:file.name,
-   size:file.size
-  })
+  method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({filename:file.name,size:file.size})
  });
-
  const data=await response.json();
-
- if(!response.ok){
-  throw new Error(data.detail||"Upload start failed");
- }
-
- if(!data.upload_id||!data.chunk_size||!data.total_chunks){
-  throw new Error("Invalid upload session response");
- }
-
+ if(!response.ok)throw new Error(data.detail||"Upload start failed");
  return data;
 }
 
 async function uploadVideo(file,session){
- const uploadId=session.upload_id;
- const chunkSize=session.chunk_size;
- const totalChunks=session.total_chunks;
+ const id=session.upload_id,size=session.chunk_size,total=session.total_chunks;
+ const loaded=new Array(total).fill(0);
+ let uploaded=0,next=0,failed=null;
+ const start=performance.now();
 
- const loaded=new Array(totalChunks).fill(0);
- let uploadedBytes=0;
- let nextIndex=0;
- let failed=null;
- const startedAt=performance.now();
-
- function updateProgress(){
-  const elapsed=Math.max((performance.now()-startedAt)/1000,0.1);
-  const speed=uploadedBytes/elapsed;
-  const percent=(uploadedBytes/file.size)*100;
-
-  showStatus(
-   "Uploading video • "+(uploadedBytes/1024/1024).toFixed(1)+
-   " / "+(file.size/1024/1024).toFixed(1)+" MB",
-   percent,true
-  );
-
-  document.getElementById("speed").textContent=
-   "Upload speed: "+formatSpeed(speed);
+ function update(){
+  const elapsed=Math.max((performance.now()-start)/1000,.1);
+  showStatus("Uploading video • "+(uploaded/1048576).toFixed(1)+" / "+(file.size/1048576).toFixed(1)+" MB",uploaded/file.size*100);
+  document.getElementById("speed").textContent="Upload speed: "+formatSpeed(uploaded/elapsed);
  }
 
  async function worker(){
   while(true){
    if(failed)return;
-
-   const index=nextIndex++;
-   if(index>=totalChunks)return;
-
-   const start=index*chunkSize;
-   const end=Math.min(start+chunkSize,file.size);
-   const blob=file.slice(start,end);
-
+   const index=next++;
+   if(index>=total)return;
+   const blob=file.slice(index*size,Math.min((index+1)*size,file.size));
    try{
-    await uploadChunk(
-     uploadId,index,blob,
-     loadedNow=>{
-      const next=Math.min(loadedNow,blob.size);
-      uploadedBytes+=next-loaded[index];
-      loaded[index]=next;
-      updateProgress();
-     }
-    );
-   }catch(error){
-    failed=error;
-    return;
-   }
+    await uploadChunk(id,index,blob,value=>{
+     uploaded+=value-loaded[index];loaded[index]=value;update();
+    });
+   }catch(e){failed=e;return}
   }
  }
 
- const workers=[];
- for(let i=0;i<Math.min(CHUNK_WORKERS,totalChunks);i++){
-  workers.push(worker());
- }
-
- await Promise.all(workers);
-
+ await Promise.all(Array.from({length:Math.min(CHUNK_WORKERS,total)},worker));
  if(failed)throw failed;
-
- showStatus("All chunks uploaded. Preparing video...",99,false);
- document.getElementById("speed").textContent="Combining video chunks...";
- return uploadId;
+ showStatus("Upload complete. Preparing video...",99,false);
+ return id;
 }
 
 async function generateClips(){
  if(busy)return;
-
- if(currentSource==="youtube"){
-  checkYoutubeLink();
-  showStatus("YouTube importing is not connected yet.",0,false);
-  document.getElementById("speed").textContent="Use an authorized video file upload for now.";
-  return;
- }
-
+ const isURL=currentSource==="youtube";
  const file=videoInput.files[0];
+ const url=document.getElementById("youtubeUrl").value.trim();
 
- if(!file){alert("Please select a video first.");return}
- if(file.size>500*1024*1024){alert("Video must be under 500 MB.");return}
+ if(isURL){
+  if(!url){alert("Authorized video URL paste karo.");return}
+  if(!document.getElementById("creatorPermission").checked){
+   alert("Creator permission confirmation required.");return;
+  }
+ }else{
+  if(!file){alert("Please select a video first.");return}
+  if(file.size>500*1024*1024){alert("Video must be under 500 MB.");return}
+ }
 
  const minLen=Number(document.getElementById("min").value);
  const maxLen=Number(document.getElementById("max").value);
  const count=Number(document.getElementById("count").value);
-
- if(minLen>maxLen){
-  alert("Minimum length cannot exceed maximum.");
-  return;
- }
+ if(minLen>maxLen){alert("Minimum length cannot exceed maximum.");return}
 
  busy=true;
  const btn=document.getElementById("generate");
  btn.disabled=true;
  document.getElementById("results").innerHTML="";
- document.getElementById("speed").textContent="Starting...";
 
  try{
-  showStatus("Creating upload session...",0,true);
+  let uploadId;
+  if(isURL){
+   showStatus("Importing authorized video...",5,true);
+   const response=await fetch(API+"/fast/import-url",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({url})
+   });
+   const data=await response.json();
+   if(!response.ok)throw new Error(data.detail||"Video import failed");
+   uploadId=data.upload_id;
+  }else{
+   showStatus("Creating upload session...",0,true);
+   const session=await startUpload(file);
+   if(!session.upload_id||!session.chunk_size||!session.total_chunks)
+    throw new Error("Invalid upload session response");
+   uploadId=await uploadVideo(file,session);
+  }
 
-  const session=await startUpload(file);
-
-  showStatus("Starting fast upload...",0,true);
-
-  const uploadId=await uploadVideo(file,session);
-
-  showStatus("Upload complete. Starting clip generation...",100,false);
-  document.getElementById("speed").textContent="Processing on server...";
-
+  showStatus("Starting clip generation...",100,false);
   const params=new URLSearchParams({
-   count:String(count),
-   min_len:String(minLen),
-   max_len:String(maxLen)
+   count:String(count),min_len:String(minLen),max_len:String(maxLen)
   });
-
-  const response=await fetch(
-   API+"/fast/"+uploadId+"/generate?"+params.toString(),
-   {method:"POST"}
-  );
-
+  const response=await fetch(API+"/fast/"+uploadId+"/generate?"+params,{
+   method:"POST"
+  });
   const result=await response.json();
-
-  if(!response.ok){
-   throw new Error(
-    typeof result.detail==="string"
-    ? result.detail
-    : "Clip generation start failed"
-   );
-  }
-
-  if(!result.job_id){
-   throw new Error("Server response mein job ID nahi mila.");
-  }
-
+  if(!response.ok)throw new Error(result.detail||"Clip generation failed");
+  if(!result.job_id)throw new Error("Job ID missing");
   await checkJob(result.job_id);
 
  }catch(error){
   showStatus("Error: "+error.message,0,false);
   document.getElementById("speed").textContent="Please try again.";
  }finally{
-  busy=false;
-  btn.disabled=false;
+  busy=false;btn.disabled=false;
  }
 }
 
 async function checkJob(id){
  while(true){
   const response=await fetch(API+"/make/"+id);
-
   if(!response.ok)throw new Error("Job status check failed");
-
   const job=await response.json();
 
   if(job.status==="completed"){
    displayClips(job.clips||[]);
    showStatus("Your clips are ready!",100,false);
    document.getElementById("speed").textContent="Completed";
-   break;
+   return;
   }
-
-  if(job.status==="error"){
-   throw new Error(job.error||"Clip generation failed");
-  }
-
-  showStatus(
-   job.message||"Processing your video...",
-   Number(job.progress)||0,true
-  );
-
+  if(job.status==="error")throw new Error(job.error||"Clip generation failed");
+  showStatus(job.message||"Processing your video...",job.progress||0,true);
   document.getElementById("speed").textContent="Clip generation in progress";
-
-  await new Promise(resolve=>setTimeout(resolve,3000));
+  await new Promise(r=>setTimeout(r,3000));
  }
 }
 
 function displayClips(clips){
  const results=document.getElementById("results");
  results.innerHTML="";
-
- if(!clips.length){
-  results.textContent="No clips returned by server.";
-  return;
- }
-
+ if(!clips.length){results.textContent="No clips returned.";return}
  clips.forEach((clip,index)=>{
   const url=API+clip.url;
-  const card=document.createElement("div");
-  card.className="clip";
-
+  const card=document.createElement("div");card.className="clip";
   const heading=document.createElement("h3");
-  heading.textContent=clip.name||("Clip "+(index+1));
-
+  heading.textContent=clip.name||"Clip "+(index+1);
   const player=document.createElement("video");
-  player.controls=true;
-  player.playsInline=true;
-  player.preload="metadata";
-  player.src=url;
-
+  player.controls=true;player.playsInline=true;player.preload="metadata";player.src=url;
   const link=document.createElement("a");
-  link.className="download";
-  link.href=url;
+  link.className="download";link.href=url;
   link.download="neonclip-"+(index+1)+".mp4";
   link.textContent="DOWNLOAD CLIP ↓";
-
-  card.append(heading,player,link);
-  results.appendChild(card);
+  card.append(heading,player,link);results.appendChild(card);
  });
 }
 </script>
