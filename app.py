@@ -3,6 +3,7 @@ import os
 import uuid
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
@@ -78,7 +79,11 @@ def process_job(job_id, source, count, min_len, max_len):
             JOBS[job_id]["progress"] = 10
             JOBS[job_id]["message"] = "Video check ho rahi hai..."
 
+        probe_start = time.perf_counter()
         duration = get_duration(source)
+        probe_time = time.perf_counter() - probe_start
+
+        print(f"[{job_id}] Video check time: {probe_time:.2f} seconds")
 
         if duration <= 0:
             raise RuntimeError("Video duration read nahi ho paayi.")
@@ -121,6 +126,8 @@ def process_job(job_id, source, count, min_len, max_len):
                     f"Clip {index}/{len(starts)} ban rahi hai..."
                 )
 
+            encode_start = time.perf_counter()
+
             run_command([
                 "ffmpeg",
                 "-y",
@@ -133,13 +140,20 @@ def process_job(job_id, source, count, min_len, max_len):
                 "scale=720:1280:force_original_aspect_ratio=increase,"
                 "crop=720:1280",
                 "-c:v", "libx264",
-                "-preset", "veryfast",
+                "-preset", "ultrafast",
                 "-crf", "23",
                 "-c:a", "aac",
                 "-b:a", "128k",
                 "-movflags", "+faststart",
                 str(destination)
             ], timeout=900)
+
+            encode_time = time.perf_counter() - encode_start
+
+            print(
+                f"[{job_id}] Clip {index} encoding time: "
+                f"{encode_time:.2f} seconds"
+            )
 
             clips.append({
                 "name": f"Clip {index}",
@@ -155,7 +169,11 @@ def process_job(job_id, source, count, min_len, max_len):
                 "error": None
             }
 
+        print(f"[{job_id}] Processing completed successfully.")
+
     except Exception as error:
+        print(f"[{job_id}] ERROR: {error}")
+
         with LOCK:
             JOBS[job_id] = {
                 "status": "error",
@@ -185,7 +203,6 @@ def health():
     return {"status": "ok"}
 
 
-# NEW: Chunk upload ko clipping engine se connect karta hai
 @app.post("/fast/{upload_id}/generate")
 async def generate_fast(
     upload_id: str,
@@ -249,7 +266,6 @@ async def generate_fast(
         raise
 
 
-# OLD UPLOAD SYSTEM - PRESERVED
 @app.post("/make")
 async def make(
     request: Request,
@@ -357,4 +373,4 @@ def get_job(job_id: str):
             raise HTTPException(404, "Job nahi mili.")
 
         return job
-        
+            
