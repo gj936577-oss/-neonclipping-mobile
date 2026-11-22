@@ -5,6 +5,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi import Query
@@ -41,6 +42,9 @@ BUSY = False
 ALLOWED = {".mp4", ".mov", ".mkv", ".webm"}
 MAX_SIZE = 500 * 1024 * 1024
 
+# Controlled parallel processing
+MAX_PARALLEL_CLIPS = 2
+
 
 def run_command(args, timeout=900):
     result = subprocess.run(
@@ -70,40 +74,85 @@ def get_duration(path):
     return float(result)
 
 
+def create_clip(source, destination, start, length, job_id, index):
+    started = time.perf_counter()
+
+    run_command([
+        "ffmpeg",
+        "-y",
+        "-hide_banner",
+        "-loglevel", "error",
+        "-threads", "1",
+        "-ss", str(start),
+        "-i", str(source),
+        "-t", str(length),
+        "-map", "0:v:0",
+        "-map", "0:a?",
+        "-vf",
+        "scale=720:1280:force_original_aspect_ratio=increase,"
+        "crop=720:1280",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-threads:v", "1",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-movflags", "+faststart",
+        str(destination)
+    ], timeout=900)
+
+    elapsed = time.perf_counter() - started
+
+    print(
+        f"[{job_id}] Clip {index} completed "
+        f"in {elapsed:.2f} seconds"
+    )
+
+    return {
+        "name": f"Clip {index}",
+        "url": f"/outputs/{job_id}/clip_{index}.mp4",
+        "index": index
+    }
+
+
 def process_job(job_id, source, count, min_len, max_len):
     global BUSY
 
     try:
         with LOCK:
             JOBS[job_id]["status"] = "processing"
-            JOBS[job_id]["progress"] = 10
+            JOBS[job_id]["progress"] = 5
             JOBS[job_id]["message"] = "Video check ho rahi hai..."
 
-        probe_start = time.perf_counter()
-        duration = get_duration(source)
-        probe_time = time.perf_counter() - probe_start
+        started = time.perf_counter()
 
-        print(f"[{job_id}] Video check time: {probe_time:.2f} seconds")
+        duration = get_duration(source)
 
         if duration <= 0:
             raise RuntimeError("Video duration read nahi ho paayi.")
 
-        if duration <= min_len or duration <= max_len:
+        if duration <= max_len:
             clip_count = 1
             clip_length = duration
             starts = [0]
         else:
-            clip_count = min(count, max(1, int(duration / min_len)))
+            clip_count = min(
+                count,
+                max(1, int(duration / min_len))
+            )
+
             clip_length = min(
                 max_len,
                 max(min_len, duration / clip_count)
             )
-            clip_count = min(clip_count, count)
 
             if clip_count == 1:
-                starts = [max(0, (duration - clip_length) / 2)]
+                starts = [
+                    max(0, (duration - clip_length) / 2)
+                ]
             else:
                 last_start = max(0, duration - clip_length)
+
                 starts = [
                     last_start * i / (clip_count - 1)
                     for i in range(clip_count)
@@ -112,53 +161,65 @@ def process_job(job_id, source, count, min_len, max_len):
         job_output = OUTPUTS / job_id
         job_output.mkdir(parents=True, exist_ok=True)
 
-        clips = []
+        tasks = {}
 
         for index, start in enumerate(starts, start=1):
-            filename = f"clip_{index}.mp4"
-            destination = job_output / filename
+            length = min(clip_length, duration - start)
 
-            with LOCK:
-                JOBS[job_id]["progress"] = 10 + int(
-                    80 * (index - 1) / len(starts)
+            destination = job_output / f"clip_{index}.mp4"
+
+            tasks[index] = (start, length, destination)
+
+        completed_clips = []
+
+        with ThreadPoolExecutor(
+            max_workers=min(MAX_PARALLEL_CLIPS, len(tasks))
+        ) as executor:
+
+            futures = {}
+
+            for index, (start, length, destination) in tasks.items():
+                future = executor.submit(
+                    create_clip,
+                    source,
+                    destination,
+                    start,
+                    length,
+                    job_id,
+                    index
                 )
-                JOBS[job_id]["message"] = (
-                    f"Clip {index}/{len(starts)} ban rahi hai..."
+
+                futures[future] = index
+
+            completed = 0
+
+            for future in as_completed(futures):
+                clip = future.result()
+
+                completed_clips.append(clip)
+                completed += 1
+
+                progress = 5 + int(
+                    90 * completed / len(tasks)
                 )
 
-            encode_start = time.perf_counter()
+                with LOCK:
+                    JOBS[job_id]["progress"] = progress
+                    JOBS[job_id]["message"] = (
+                        f"{completed}/{len(tasks)} clips ready ho gayi..."
+                    )
 
-            run_command([
-                "ffmpeg",
-                "-y",
-                "-ss", str(start),
-                "-i", str(source),
-                "-t", str(min(clip_length, duration - start)),
-                "-map", "0:v:0",
-                "-map", "0:a?",
-                "-vf",
-                "scale=720:1280:force_original_aspect_ratio=increase,"
-                "crop=720:1280",
-                "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-crf", "23",
-                "-c:a", "aac",
-                "-b:a", "128k",
-                "-movflags", "+faststart",
-                str(destination)
-            ], timeout=900)
+        completed_clips.sort(key=lambda clip: clip["index"])
 
-            encode_time = time.perf_counter() - encode_start
+        clips = [
+            {
+                "name": clip["name"],
+                "url": clip["url"]
+            }
+            for clip in completed_clips
+        ]
 
-            print(
-                f"[{job_id}] Clip {index} encoding time: "
-                f"{encode_time:.2f} seconds"
-            )
-
-            clips.append({
-                "name": f"Clip {index}",
-                "url": f"/outputs/{job_id}/{filename}"
-            })
+        elapsed = time.perf_counter() - started
 
         with LOCK:
             JOBS[job_id] = {
@@ -169,7 +230,10 @@ def process_job(job_id, source, count, min_len, max_len):
                 "error": None
             }
 
-        print(f"[{job_id}] Processing completed successfully.")
+        print(
+            f"[{job_id}] All clips completed "
+            f"in {elapsed:.2f} seconds"
+        )
 
     except Exception as error:
         print(f"[{job_id}] ERROR: {error}")
@@ -373,4 +437,4 @@ def get_job(job_id: str):
             raise HTTPException(404, "Job nahi mili.")
 
         return job
-            
+        
